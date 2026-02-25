@@ -165,6 +165,16 @@ source ~/.zshrc
 
 ---
 
+## Troubleshooting: `install.sh` errors on Debian / WSL
+
+**`local: can only be used in a function`**
+Caused by an older version of `install.sh` that used `local` outside a function. Pull the latest version of the script — this is fixed.
+
+**`ZPLUG_HOME: unbound variable`**
+Caused by `set -u` (strict mode) in the script treating an unset `ZPLUG_HOME` as an error before the detection logic could run. Fixed in the current version using `${ZPLUG_HOME:-}` which safely returns empty instead of erroring when the variable is unset. Safe on macOS and Debian.
+
+---
+
 ## Keybindings
 
 | Keys | Action |
@@ -359,7 +369,7 @@ To add any of these, copy the pattern from an existing language block in `precmd
 3. Symlinks `.zshrc` and `aliasrc` into `$HOME`
 4. Checks if **Zsh** is installed — offers to install it if not
 5. Offers to set Zsh as your **default shell** if it isn't already
-6. Checks if **zplug** is installed — offers to install it if not
+6. Checks if **zplug** is installed — offers to install via curl if not (never `brew install zplug` — Homebrew produces an incomplete install). If already installed, automatically clears any ghost entries from `~/.zplug/packages.zsh` that would cause `Failed to install` errors
 7. Checks if **autojump** is installed — offers to install it if not
 8. Reports which **optional dev tools** are missing (git, docker, node, python3, terraform, go, rust, ruby, php, java) with the right install command for your OS
 9. On macOS, checks for **Homebrew** and offers to install it
