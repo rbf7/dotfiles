@@ -189,22 +189,19 @@ setopt HIST_REDUCE_BLANKS
 ############################################
 
 _check_zplug() {
-    # Always set ZPLUG_HOME first so zplug knows where to store plugins.
-    # IMPORTANT: check for init.zsh inside the dir, not just the dir itself.
-    # Homebrew can create the directory but leave it incomplete/broken,
-    # which causes "Failed to install" errors even though the path exists.
-    # Priority: curl/manual install (~/.zplug) → Homebrew Apple Silicon → Intel
-    if [[ -z "$ZPLUG_HOME" ]]; then
-        if   [ -f "$HOME/.zplug/init.zsh" ];                  then export ZPLUG_HOME="$HOME/.zplug"
-        elif [ -f /opt/homebrew/opt/zplug/init.zsh ];         then export ZPLUG_HOME=/opt/homebrew/opt/zplug
-        elif [ -f /usr/local/opt/zplug/init.zsh ];            then export ZPLUG_HOME=/usr/local/opt/zplug
-        elif [ -f /usr/share/zplug/init.zsh ];                then export ZPLUG_HOME=/usr/share/zplug
-        fi
-    fi
+    # ZPLUG_HOME = where zplug stores user data (repos, cache, logs).
+    # Always set to ~/.zplug — a user-writable path.
+    # This is intentionally separate from where the init script lives.
+    # If ZPLUG_HOME pointed to a system path like /usr/share/zplug (apt
+    # install), non-root users get "Permission denied" creating log/cache/repos.
+    export ZPLUG_HOME="$HOME/.zplug"
 
-    # Find the init script — use ZPLUG_HOME if set, else fall back to known paths
-    if   [ -f "$ZPLUG_HOME/init.zsh" ];                 then ZPLUG_INIT_PATH="$ZPLUG_HOME/init.zsh"
-    elif [ -f /usr/share/zplug/init.zsh ];              then ZPLUG_INIT_PATH=/usr/share/zplug/init.zsh
+    # Find the init script — checked separately from ZPLUG_HOME.
+    # Order: user curl install → Homebrew Apple Silicon → Homebrew Intel → apt
+    if   [ -f "$HOME/.zplug/init.zsh" ];                  then ZPLUG_INIT_PATH="$HOME/.zplug/init.zsh"
+    elif [ -f /opt/homebrew/opt/zplug/init.zsh ];         then ZPLUG_INIT_PATH=/opt/homebrew/opt/zplug/init.zsh
+    elif [ -f /usr/local/opt/zplug/init.zsh ];            then ZPLUG_INIT_PATH=/usr/local/opt/zplug/init.zsh
+    elif [ -f /usr/share/zplug/init.zsh ];                then ZPLUG_INIT_PATH=/usr/share/zplug/init.zsh
     else return 1
     fi
     return 0

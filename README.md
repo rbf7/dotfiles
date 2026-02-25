@@ -161,7 +161,18 @@ zplug install
 source ~/.zshrc
 ```
 
-**Does this happen on Debian / WSL?** Rarely — the curl installer always sets `ZPLUG_HOME=$HOME/.zplug` correctly. But if zplug was installed via `apt` on some distros the same hollow-directory issue can occur. The same fix applies: uninstall via apt, reinstall via curl.
+**Cause 4 — System-wide zplug install with a non-root user (NAS, shared servers).**
+When zplug is installed via `apt`, it lands in `/usr/share/zplug` which is owned by root. If `ZPLUG_HOME` points there, zplug tries to create `log/`, `cache/`, and `repos/` inside that system path and fails for any non-root user:
+
+```
+mkdir: cannot create directory '/usr/share/zplug/log': Permission denied
+mkdir: cannot create directory '/usr/share/zplug/cache': Permission denied
+mkdir: cannot create directory '/usr/share/zplug/repos': Permission denied
+```
+
+The fix is to always keep `ZPLUG_HOME` separate from the init script location. The init script can live anywhere — `ZPLUG_HOME` must always be `~/.zplug` (user-writable). The `.zshrc` now does this unconditionally.
+
+**Does this affect macOS?** No — on macOS zplug is always in a user-owned location (Homebrew or `~/.zplug`).
 
 ---
 
@@ -287,9 +298,9 @@ Caused by `set -u` (strict mode) in the script treating an unset `ZPLUG_HOME` as
 | `apt-show` | `apt show` |
 | `apt-list` | `apt list --installed` |
 | `update-grub` | `sudo update-grub` (when available) |
-| `gds-start` | Start OpenVPN client via systemctl |
-| `gds-stop` | Stop OpenVPN client via systemctl |
-| `gds-status` | Status of OpenVPN client |
+| `vpn-start` | Start OpenVPN client via systemctl (rename to match your service) |
+| `vpn-stop` | Stop OpenVPN client via systemctl |
+| `vpn-status` | Status of OpenVPN client |
 
 ### macOS
 

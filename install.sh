@@ -132,16 +132,10 @@ fi
 echo ""
 info "Checking zplug..."
 
-# Set ZPLUG_HOME — check for init.zsh, not just directory existence.
-# Homebrew can create the zplug dir but leave it broken/incomplete.
-# Prefer ~/.zplug (curl install) over Homebrew paths.
-if [[ -z "${ZPLUG_HOME:-}" ]]; then
-  if   [[ -f "$HOME/.zplug/init.zsh" ]];           then export ZPLUG_HOME="$HOME/.zplug"
-  elif [[ -f /opt/homebrew/opt/zplug/init.zsh ]];  then export ZPLUG_HOME=/opt/homebrew/opt/zplug
-  elif [[ -f /usr/local/opt/zplug/init.zsh ]];     then export ZPLUG_HOME=/usr/local/opt/zplug
-  elif [[ -f /usr/share/zplug/init.zsh ]];         then export ZPLUG_HOME=/usr/share/zplug
-  fi
-fi
+# ZPLUG_HOME must always be user-writable (~/.zplug).
+# Never point it at a system path like /usr/share/zplug — non-root users
+# will get "Permission denied" when zplug tries to create log/cache/repos.
+export ZPLUG_HOME="$HOME/.zplug"
 
 _zplug_found=false
 
