@@ -114,6 +114,30 @@ curl -sL --proto-redir -all,https \
   https://raw.githubusercontent.com/zplug/zplug/master/scripts/install.sh | zsh
 ```
 
+### Troubleshooting: "Failed to install" on macOS
+
+If you see `Failed to install plugins/zsh-autosuggestions` or similar errors on macOS, the cause is almost always that `$ZPLUG_HOME` is not set. Homebrew installs zplug but does **not** export this variable automatically, so zplug has nowhere to store cloned plugins.
+
+The `.zshrc` handles this automatically by detecting the Homebrew prefix and setting `ZPLUG_HOME` before sourcing zplug. If you still hit issues, verify manually:
+
+```bash
+# Should print a path — if empty, zplug has no home directory
+echo $ZPLUG_HOME
+
+# Set it manually for your Homebrew prefix, then reinstall plugins
+export ZPLUG_HOME=/opt/homebrew/opt/zplug   # Apple Silicon
+# export ZPLUG_HOME=/usr/local/opt/zplug    # Intel Mac
+
+zplug install
+```
+
+Then reload:
+```bash
+source ~/.zshrc
+```
+
+**Does this happen on Debian / WSL?** Less commonly — the curl installer sets `ZPLUG_HOME=$HOME/.zplug` automatically. But if you installed zplug via `apt` on some distros, the same missing-`ZPLUG_HOME` issue can occur. The same fix applies: set `ZPLUG_HOME` explicitly before sourcing zplug, which this config now does for all environments.
+
 ---
 
 ## Keybindings

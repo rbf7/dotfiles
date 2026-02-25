@@ -132,6 +132,18 @@ fi
 echo ""
 info "Checking zplug..."
 
+# Set ZPLUG_HOME based on OS before checking — Homebrew on macOS does NOT
+# export this automatically, which causes "Failed to install" plugin errors.
+if [[ -z "$ZPLUG_HOME" ]]; then
+  if   [[ -d /opt/homebrew/opt/zplug ]]; then
+    export ZPLUG_HOME=/opt/homebrew/opt/zplug   # Homebrew Apple Silicon
+  elif [[ -d /usr/local/opt/zplug ]]; then
+    export ZPLUG_HOME=/usr/local/opt/zplug       # Homebrew Intel
+  else
+    export ZPLUG_HOME="$HOME/.zplug"             # curl install / Debian / WSL
+  fi
+fi
+
 _zplug_found=false
 
 for _p in \

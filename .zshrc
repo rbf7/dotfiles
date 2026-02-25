@@ -189,8 +189,21 @@ setopt HIST_REDUCE_BLANKS
 ############################################
 
 _check_zplug() {
+    # Always set ZPLUG_HOME first so zplug knows where to store plugins.
+    # Homebrew (macOS) does NOT set this automatically — without it,
+    # plugin installs fail with "Failed to install" errors.
+    if [[ -z "$ZPLUG_HOME" ]]; then
+        if   [ -d /opt/homebrew/opt/zplug ]; then
+            export ZPLUG_HOME=/opt/homebrew/opt/zplug   # Homebrew Apple Silicon
+        elif [ -d /usr/local/opt/zplug ]; then
+            export ZPLUG_HOME=/usr/local/opt/zplug       # Homebrew Intel
+        else
+            export ZPLUG_HOME="$HOME/.zplug"             # curl install / Linux / WSL
+        fi
+    fi
+
     if   [ -f /usr/share/zplug/init.zsh ];              then ZPLUG_INIT_PATH=/usr/share/zplug/init.zsh
-    elif [ -f "$HOME/.zplug/init.zsh" ];                then export ZPLUG_HOME="$HOME/.zplug"; ZPLUG_INIT_PATH="$ZPLUG_HOME/init.zsh"
+    elif [ -f "$HOME/.zplug/init.zsh" ];                then ZPLUG_INIT_PATH="$HOME/.zplug/init.zsh"
     elif [ -f /usr/local/opt/zplug/init.zsh ];          then ZPLUG_INIT_PATH=/usr/local/opt/zplug/init.zsh
     elif [ -f /opt/homebrew/opt/zplug/init.zsh ];       then ZPLUG_INIT_PATH=/opt/homebrew/opt/zplug/init.zsh
     else return 1
@@ -226,10 +239,12 @@ fi
 # 5. PLUGIN DEFINITIONS (via zplug)
 ############################################
 
-zplug "zsh-users/zsh-autosuggestions"
-zplug "zsh-users/zsh-history-substring-search"
-zplug "zsh-users/zsh-syntax-highlighting"
-zplug "zsh-users/zsh-completions"
+# zsh-users plugins — explicit from:github required; without it zplug
+# can fail to resolve the source on macOS Homebrew installs
+zplug "zsh-users/zsh-autosuggestions",          from:github
+zplug "zsh-users/zsh-history-substring-search", from:github
+zplug "zsh-users/zsh-syntax-highlighting",      from:github
+zplug "zsh-users/zsh-completions",              from:github
 
 # Oh My Zsh plugins
 zplug "plugins/command-not-found", from:oh-my-zsh
