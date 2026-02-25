@@ -132,15 +132,14 @@ fi
 echo ""
 info "Checking zplug..."
 
-# Set ZPLUG_HOME based on OS before checking — Homebrew on macOS does NOT
-# export this automatically, which causes "Failed to install" plugin errors.
+# Set ZPLUG_HOME — check for init.zsh, not just directory existence.
+# Homebrew can create the zplug dir but leave it broken/incomplete.
+# Prefer ~/.zplug (curl install) over Homebrew paths.
 if [[ -z "$ZPLUG_HOME" ]]; then
-  if   [[ -d /opt/homebrew/opt/zplug ]]; then
-    export ZPLUG_HOME=/opt/homebrew/opt/zplug   # Homebrew Apple Silicon
-  elif [[ -d /usr/local/opt/zplug ]]; then
-    export ZPLUG_HOME=/usr/local/opt/zplug       # Homebrew Intel
-  else
-    export ZPLUG_HOME="$HOME/.zplug"             # curl install / Debian / WSL
+  if   [[ -f "$HOME/.zplug/init.zsh" ]];           then export ZPLUG_HOME="$HOME/.zplug"
+  elif [[ -f /opt/homebrew/opt/zplug/init.zsh ]];  then export ZPLUG_HOME=/opt/homebrew/opt/zplug
+  elif [[ -f /usr/local/opt/zplug/init.zsh ]];     then export ZPLUG_HOME=/usr/local/opt/zplug
+  elif [[ -f /usr/share/zplug/init.zsh ]];         then export ZPLUG_HOME=/usr/share/zplug
   fi
 fi
 
@@ -157,19 +156,33 @@ done
 
 if [[ "$_zplug_found" == true ]]; then
   success "zplug already installed."
+
+  # Clean ghost entries from packages.zsh.
+  # If a previous broken install stored bare plugin names like
+  # "plugins/zsh-autosuggestions" (no from: tag) in packages.zsh,
+  # zplug keeps retrying them even after .zshrc is fixed — causing
+  # "Failed to install" errors forever. All plugin definitions live
+  # in .zshrc so packages.zsh should be empty.
+  if [[ -n "$ZPLUG_HOME" && -f "$ZPLUG_HOME/packages.zsh" ]]; then
+    _ghost=$(grep -v '^\s*$' "$ZPLUG_HOME/packages.zsh" 2>/dev/null || true)
+    if [[ -n "$_ghost" ]]; then
+      warn "Found ghost entries in $ZPLUG_HOME/packages.zsh:"
+      echo "$_ghost"
+      warn "Clearing them — .zshrc manages all plugin definitions."
+      echo "" > "$ZPLUG_HOME/packages.zsh"
+      success "packages.zsh cleared."
+    fi
+  fi
 else
   warn "zplug not found."
   read -rp "  Install zplug now? [y/N] " _reply
   if [[ "$_reply" =~ ^[Yy]$ ]]; then
-    if [[ "$OS" == "mac" ]] && command -v brew >/dev/null 2>&1; then
-      brew install zplug
-      success "zplug installed via Homebrew."
-    else
-      info "Installing zplug via curl..."
-      curl -sL --proto-redir -all,https \
-        https://raw.githubusercontent.com/zplug/zplug/master/scripts/install.sh | zsh
-      success "zplug installed."
-    fi
+    # Always use curl — brew install zplug creates an incomplete directory
+    # that causes "Failed to install" plugin errors.
+    info "Installing zplug via curl (recommended over Homebrew)..."
+    curl -sL --proto-redir -all,https \
+      https://raw.githubusercontent.com/zplug/zplug/master/scripts/install.sh | zsh
+    success "zplug installed."
   else
     warn "Skipping zplug. Plugins will not load until it is installed."
   fi

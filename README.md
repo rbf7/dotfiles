@@ -116,27 +116,52 @@ curl -sL --proto-redir -all,https \
 
 ### Troubleshooting: "Failed to install" on macOS
 
-If you see `Failed to install plugins/zsh-autosuggestions` or similar errors on macOS, the cause is almost always that `$ZPLUG_HOME` is not set. Homebrew installs zplug but does **not** export this variable automatically, so zplug has nowhere to store cloned plugins.
+There are two separate causes for this error on macOS:
 
-The `.zshrc` handles this automatically by detecting the Homebrew prefix and setting `ZPLUG_HOME` before sourcing zplug. If you still hit issues, verify manually:
+**Cause 1 — Homebrew creates a broken/incomplete zplug directory.**
+`brew install zplug` can create `/opt/homebrew/opt/zplug` but leave it missing `init.zsh`, `autoload/`, `bin/` and other required files. If the directory exists but is hollow, any `ZPLUG_HOME` check against the directory alone (not `init.zsh`) will wrongly trust it.
+
+The `.zshrc` now guards against this by checking for `init.zsh` inside each candidate path, and prefers `~/.zplug` (the curl install) over Homebrew paths.
+
+**Cause 2 — `$ZPLUG_HOME` points to the wrong place.**
+Homebrew does not export `ZPLUG_HOME` automatically. Without it set correctly, zplug has no writable location to clone plugins into.
+
+**Cause 3 — Ghost entry in `~/.zplug/packages.zsh`.**
+zplug persists plugin definitions in `~/.zplug/packages.zsh`. If a previous broken install wrote a bare entry like `zplug "plugins/zsh-autosuggestions"` (no `from:` tag) into that file, zplug keeps trying to install it on every `zplug install` even after `.zshrc` is fixed. `zplug remove` does not exist as a command, so the fix is to clear the file manually:
 
 ```bash
-# Should print a path — if empty, zplug has no home directory
-echo $ZPLUG_HOME
+# See what's in it
+cat ~/.zplug/packages.zsh
 
-# Set it manually for your Homebrew prefix, then reinstall plugins
-export ZPLUG_HOME=/opt/homebrew/opt/zplug   # Apple Silicon
-# export ZPLUG_HOME=/usr/local/opt/zplug    # Intel Mac
+# Clear it — .zshrc manages all plugin definitions, this file should be empty
+echo "" > ~/.zplug/packages.zsh
 
+# Verify the ghost is gone
+zplug list
+
+# Reinstall and reload
 zplug install
-```
-
-Then reload:
-```bash
 source ~/.zshrc
 ```
 
-**Does this happen on Debian / WSL?** Less commonly — the curl installer sets `ZPLUG_HOME=$HOME/.zplug` automatically. But if you installed zplug via `apt` on some distros, the same missing-`ZPLUG_HOME` issue can occur. The same fix applies: set `ZPLUG_HOME` explicitly before sourcing zplug, which this config now does for all environments.
+**Fix — if you have a broken Homebrew zplug:**
+
+```bash
+# Remove the broken Homebrew install
+brew uninstall zplug
+
+# Install via curl — always creates a complete ~/.zplug
+# Do NOT use brew install zplug — it creates an incomplete directory
+curl -sL --proto-redir -all,https \
+  https://raw.githubusercontent.com/zplug/zplug/master/scripts/install.sh | zsh
+
+# Reload and install plugins
+source ~/.zshrc
+zplug install
+source ~/.zshrc
+```
+
+**Does this happen on Debian / WSL?** Rarely — the curl installer always sets `ZPLUG_HOME=$HOME/.zplug` correctly. But if zplug was installed via `apt` on some distros the same hollow-directory issue can occur. The same fix applies: uninstall via apt, reinstall via curl.
 
 ---
 
