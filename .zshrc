@@ -54,16 +54,28 @@ zstyle ':vcs_info:git:*'  stagedstr        '+'
 precmd() {
   vcs_info
 
+  # ── Tokyo Night colour palette ─────────────────────────────────
+  # 111  #7aa2f7  soft blue       — user, node
+  # 141  #bb9af7  soft purple     — host
+  # 117  #7dcfff  sky cyan        — path, terraform, go
+  # 114  #9ece6a  muted green     — git branch
+  #  60  #565f89  grey-blue       — @ separator, dimmed text
+  # 215  #ff9e64  warm orange     — python, java
+  # 210  #f7768e  soft red        — error arrow, ruby
+  # 176  #c678dd  orchid purple   — php, kotlin
+  #  74  #2ac3de  teal            — docker, aws
+  # ───────────────────────────────────────────────────────────────
+
   # Python — only shown when a virtualenv is active
   _pp=""
   if [[ -n "$VIRTUAL_ENV" ]] && command -v python3 >/dev/null 2>&1; then
-    _pp=" %F{yellow}🐍 py:$(python3 --version 2>&1 | awk '{print $2}')%f"
+    _pp=" %F{215}🐍 py:$(python3 --version 2>&1 | awk '{print $2}')%f"
   fi
 
   # Node — only shown if package.json exists in current directory
   _pn=""
   if [[ -f "$PWD/package.json" ]] && command -v node >/dev/null 2>&1; then
-    _pn=" %F{green}⬡ node:$(node --version | sed 's/v//')%f"
+    _pn=" %F{111}⬡ node:$(node --version | sed 's/v//')%f"
   fi
 
   # Terraform — only shown if .tf files exist in current directory
@@ -71,7 +83,7 @@ precmd() {
   if command -v terraform >/dev/null 2>&1 && ls "$PWD"/*.tf 2>/dev/null | grep -q .; then
     local _tfver
     _tfver=$(terraform version 2>/dev/null | head -1 | awk '{print $2}' | sed 's/v//')
-    _pt=" %F{cyan}🏗  tf:${_tfver}%f"
+    _pt=" %F{117}🏗  tf:${_tfver}%f"
   fi
 
   # Java — only shown if pom.xml or build.gradle exists in current directory
@@ -79,7 +91,7 @@ precmd() {
   if command -v java >/dev/null 2>&1 && [[ -f "$PWD/pom.xml" || -f "$PWD/build.gradle" ]]; then
     local _javaver
     _javaver=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}')
-    _pj=" %F{208}☕ java:${_javaver}%f"
+    _pj=" %F{215}☕ java:${_javaver}%f"
   fi
 
   # Go — only shown if go.mod exists in current directory
@@ -87,7 +99,7 @@ precmd() {
   if command -v go >/dev/null 2>&1 && [[ -f "$PWD/go.mod" ]]; then
     local _gover
     _gover=$(go version | awk '{print $3}' | sed 's/go//')
-    _pgo=" %F{cyan}🐹 go:${_gover}%f"
+    _pgo=" %F{117}🐹 go:${_gover}%f"
   fi
 
   # Rust — only shown if Cargo.toml exists in current directory
@@ -95,7 +107,7 @@ precmd() {
   if command -v rustc >/dev/null 2>&1 && [[ -f "$PWD/Cargo.toml" ]]; then
     local _rsver
     _rsver=$(rustc --version 2>/dev/null | awk '{print $2}')
-    _prs=" %F{208}🦀 rust:${_rsver}%f"
+    _prs=" %F{215}🦀 rust:${_rsver}%f"
   fi
 
   # Ruby — only shown if Gemfile exists in current directory
@@ -103,7 +115,7 @@ precmd() {
   if command -v ruby >/dev/null 2>&1 && [[ -f "$PWD/Gemfile" ]]; then
     local _rbver
     _rbver=$(ruby --version 2>/dev/null | awk '{print $2}')
-    _prb=" %F{red}💎 ruby:${_rbver}%f"
+    _prb=" %F{210}💎 ruby:${_rbver}%f"
   fi
 
   # PHP — only shown if composer.json exists in current directory
@@ -111,7 +123,7 @@ precmd() {
   if command -v php >/dev/null 2>&1 && [[ -f "$PWD/composer.json" ]]; then
     local _phpver
     _phpver=$(php --version 2>/dev/null | head -1 | awk '{print $2}')
-    _pphp=" %F{magenta}🐘 php:${_phpver}%f"
+    _pphp=" %F{176}🐘 php:${_phpver}%f"
   fi
 
   # Kotlin — only shown if build.gradle.kts exists in current directory
@@ -119,13 +131,13 @@ precmd() {
   if command -v kotlin >/dev/null 2>&1 && [[ -f "$PWD/build.gradle.kts" ]]; then
     local _ktver
     _ktver=$(kotlin -version 2>&1 | awk '{print $3}')
-    _pkt=" %F{blue}🎯 kotlin:${_ktver}%f"
+    _pkt=" %F{176}🎯 kotlin:${_ktver}%f"
   fi
 
   # AWS profile — only shown when AWS_PROFILE env var is set
   _pa=""
   if [[ -n "$AWS_PROFILE" ]]; then
-    _pa=" %F{208}☁️  aws:${AWS_PROFILE}%f"
+    _pa=" %F{74}☁️  aws:${AWS_PROFILE}%f"
   fi
 
   # Docker context — only shown if docker is available and context is not default
@@ -133,19 +145,21 @@ precmd() {
   if command -v docker >/dev/null 2>&1; then
     local _dctx
     _dctx=$(docker context show 2>/dev/null)
-    [[ -n "$_dctx" && "$_dctx" != "default" ]] && _pd=" %F{33}🐳 ${_dctx}%f"
+    [[ -n "$_dctx" && "$_dctx" != "default" ]] && _pd=" %F{74}🐳 ${_dctx}%f"
   fi
 }
 
 # ── Prompt layout ──────────────────────────────────────────────
-# Line 1: user@host ~/path (git branch!)  🐍 node: tf: java: aws:
-# Line 2: ❯  (green on success, red on error)
-# Right:  ✓ / ✗<code>  HH:MM
+# Tokyo Night palette:
+#   user(111 blue) @(60 grey) host(141 purple) path(117 cyan) git(114 green)
+#   tool badges: orange/cyan/purple tones
+#   ❯  green(114) on success, red(210) on error
+#   right: ✓(114) / ✗code(210)  time(60 dimmed)
 # ───────────────────────────────────────────────────────────────
-PROMPT='%F{magenta}%n%f%F{white}@%f%F{blue}%m%f %F{cyan}%~%f%F{red}${vcs_info_msg_0_}%f${_pp}${_pn}${_pt}${_pj}${_pgo}${_prs}${_prb}${_pphp}${_pkt}${_pa}${_pd}
-%(?.%F{green}❯%f.%F{red}❯%f) '
+PROMPT='%F{111}%n%f%F{60}@%f%F{141}%m%f %F{117}%~%f%F{114}${vcs_info_msg_0_}%f${_pp}${_pn}${_pt}${_pj}${_pgo}${_prs}${_prb}${_pphp}${_pkt}${_pa}${_pd}
+%(?.%F{114}❯%f.%F{210}❯%f) '
 
-RPROMPT='%(?.%F{green}✓%f.%F{red}✗ %?%f) %F{240}%T%f'
+RPROMPT='%(?.%F{114}✓%f.%F{210}✗ %?%f) %F{60}%T%f'
 
 # Quick command to print all detected tool versions at once
 devinfo() {
