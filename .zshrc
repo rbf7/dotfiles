@@ -437,7 +437,7 @@ alias dkc='docker compose'
 alias dkcu='docker compose up -d'
 alias dkcd='docker compose down'
 alias dkps='docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"'
-alias dkclean='docker system prune -f'
+alias dkclean='docker system prune'
 
 # --- Git extras (on top of aliasrc gitpush/gitupdate) ---
 alias gs='git status'

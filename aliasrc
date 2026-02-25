@@ -1,0 +1,385 @@
+############################################
+# aliasrc — shared aliases & functions
+# Sourced by ~/.zshrc (and optionally ~/.bashrc)
+# Targets: Debian/Ubuntu, WSL (Debian), macOS
+############################################
+
+
+############################################
+# EDITOR
+############################################
+
+export EDITOR=vim
+
+
+############################################
+# ARCHIVE EXTRACTOR
+# usage: ex <file>
+############################################
+
+ex() {
+  if [ -f "$1" ]; then
+    case "$1" in
+      *.tar.bz2)  tar xjf "$1"    ;;
+      *.tar.gz)   tar xzf "$1"    ;;
+      *.tar.xz)   tar xJf "$1"    ;;
+      *.bz2)      bunzip2 "$1"    ;;
+      *.rar)      unrar x "$1"    ;;
+      *.gz)       gunzip "$1"     ;;
+      *.tar)      tar xf "$1"     ;;
+      *.tbz2)     tar xjf "$1"    ;;
+      *.tgz)      tar xzf "$1"    ;;
+      *.zip)      unzip "$1"      ;;
+      *.Z)        uncompress "$1" ;;
+      *.7z)       7z x "$1"       ;;
+      *)          echo "'$1' cannot be extracted via ex()" ;;
+    esac
+  else
+    echo "'$1' is not a valid file"
+  fi
+}
+
+
+############################################
+# FILE LISTING
+# FIX: macOS ships BSD ls (color flag is -G)
+#      Debian/WSL ship GNU ls (color flag is --color=auto)
+#      Set the right one per OS first so every downstream
+#      alias (ll, la, lt…) inherits it cleanly.
+############################################
+
+if [[ "$OSTYPE" == darwin* ]]; then
+    alias ls='ls -G'
+else
+    alias ls='ls --color=auto'
+fi
+
+alias ll='ls -l'
+alias l='ls -lFh'       # long, type, human readable
+alias la='ls -lAFh'     # long, almost all, type, human readable
+alias lr='ls -tRFh'     # sorted by date, recursive
+alias lt='ls -ltFh'     # long, sorted by date
+alias ldot='ls -ld .*'  # dotfiles only
+alias lS='ls -1FSsh'    # sorted by size
+alias lart='ls -1Fcart'
+alias lrt='ls -1Fcrt'
+
+
+############################################
+# GREP
+############################################
+
+alias grep='grep --color=auto'
+alias sgrep='grep -R -n -H -C 5 --exclude-dir={.git,.svn,CVS}'
+alias ftext='grep -rnw . -e'   # full text search: ftext "pattern"
+
+
+############################################
+# NAVIGATION
+############################################
+
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias ~='cd ~'
+
+
+############################################
+# TAIL / HEAD SHORTCUTS
+############################################
+
+alias t='tail -f'
+alias -g H='| head'
+alias -g T='| tail'
+alias -g G='| grep'
+alias -g L='| less'
+alias -g LL='2>&1 | less'
+alias -g CA='2>&1 | cat -A'
+alias -g NE='2>/dev/null'
+alias -g NUL='>/dev/null 2>&1'
+
+# FIX: 'most' and 'pygmentize' are optional — guard both.
+# 'most' is not installed by default on Debian or macOS.
+if command -v most >/dev/null 2>&1; then
+    alias -g M='| most'
+fi
+# pygmentize requires: pip install pygments
+if command -v pygmentize >/dev/null 2>&1; then
+    alias -g P='2>&1 | pygmentize -l pytb'
+fi
+
+
+############################################
+# DISK USAGE
+############################################
+
+alias dud='du -d 1 -h'   # -d flag works on both GNU and BSD du
+alias duf='du -sh *'
+alias dfh='df -h'
+
+
+############################################
+# FIND
+# FIX: 'fd' alias conflicts with the popular fd-find tool.
+#      On Debian: apt install fd-find  → binary is 'fdfind'
+#      On macOS:  brew install fd      → binary is 'fd'
+#      Only create the find alias if neither is installed,
+#      to avoid silently shadowing the real tool.
+############################################
+
+if ! command -v fd >/dev/null 2>&1 && ! command -v fdfind >/dev/null 2>&1; then
+    alias fd='find . -type d -name'
+fi
+alias ff='find . -type f -name'
+
+
+############################################
+# HISTORY
+############################################
+
+alias h='history'
+alias hgrep='fc -El 0 | grep'
+
+
+############################################
+# PROCESS
+############################################
+
+alias p='ps -f'
+alias psg='ps aux | grep'   # usage: psg nginx
+
+
+############################################
+# SAFE FILE OPS (prompt before overwrite)
+############################################
+
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+
+
+############################################
+# EDITOR SHORTCUTS
+############################################
+
+alias vi='vim'
+alias vim='vim'
+alias zshrc='${=EDITOR} ~/.zshrc'
+alias aliasrc='${=EDITOR} ~/aliasrc'
+
+
+############################################
+# MISC UTILITIES
+############################################
+
+alias sortnr='sort -n -r'
+alias unexport='unset'
+alias help='man'
+alias reload='source ~/.zshrc'
+alias myip='curl -s ifconfig.me && echo'
+alias path='echo $PATH | tr ":" "\n"'
+alias cls='clear'
+alias now='date +"%Y-%m-%d %H:%M:%S"'
+
+# FIX: lsof is not installed by default on Debian/WSL.
+# If missing, fall back to 'ss' (iproute2, present on all modern Debian/WSL).
+# On macOS, lsof is always available.
+if command -v lsof >/dev/null 2>&1; then
+    alias ports='lsof -i -P -n | grep LISTEN'
+else
+    alias ports='ss -tlnp'   # iproute2 fallback — same result
+fi
+
+
+############################################
+# GIT
+############################################
+
+# Full push workflow: gp "commit message"
+gitpush() {
+    git add .
+    git commit -m "$*"
+    git pull --rebase
+    git push
+}
+
+# Refresh SSH agent — update key filename to match yours (e.g. ~/.ssh/id_ed25519)
+gitupdate() {
+    eval "$(ssh-agent -s)"
+    ssh-add ~/.ssh/id_ed25519
+    ssh -T git@github.com
+}
+
+alias gp=gitpush
+alias gu=gitupdate
+alias gs='git status'
+alias gl='git log --oneline --graph --decorate -15'
+alias gco='git checkout'
+alias gcb='git checkout -b'
+alias gaa='git add -A'
+alias gcm='git commit -m'
+alias gd='git diff'
+alias gds='git diff --staged'
+alias grb='git rebase'
+alias gst='git stash'
+alias gstp='git stash pop'
+
+
+############################################
+# PYTHON
+############################################
+
+alias py='python3'
+alias pip='pip3'
+alias pyver='python3 --version'
+alias venv='python3 -m venv .venv && source .venv/bin/activate'
+alias activate='source .venv/bin/activate'
+
+
+############################################
+# NODE / REACT
+############################################
+
+alias nodever='node --version && npm --version'
+alias nr='npm run'
+alias nrd='npm run dev'
+alias nrb='npm run build'
+alias nrt='npm run test'
+alias nri='npm install'
+
+
+############################################
+# TERRAFORM
+############################################
+
+alias tf='terraform'
+alias tfi='terraform init'
+alias tfp='terraform plan'
+alias tfa='terraform apply'
+alias tfd='terraform destroy'
+alias tfver='terraform version'
+alias tfw='terraform workspace list'
+
+
+############################################
+# JAVA
+############################################
+
+alias javaver='java -version'
+alias mvnw='./mvnw'
+alias gradlew='./gradlew'
+
+
+############################################
+# GO
+############################################
+
+alias gorun='go run .'
+alias gobuild='go build ./...'
+alias gotest='go test ./...'
+alias gotidy='go mod tidy'
+alias gover='go version'
+
+
+############################################
+# RUST
+############################################
+
+alias cb='cargo build'
+alias cr='cargo run'
+alias ct='cargo test'
+alias ccheck='cargo check'
+alias cfmt='cargo fmt'
+alias rustver='rustc --version'
+
+
+############################################
+# RUBY
+############################################
+
+alias rubyver='ruby --version'
+alias be='bundle exec'
+alias bi='bundle install'
+alias ber='bundle exec rails'
+alias rs='bundle exec rails server'
+alias rc='bundle exec rails console'
+
+
+############################################
+# PHP
+############################################
+
+alias phpver='php --version'
+alias cpa='composer install'
+alias cpu='composer update'
+alias cpd='composer dump-autoload'
+
+
+############################################
+# DOCKER
+############################################
+
+alias dk='docker'
+alias dkc='docker compose'
+alias dkcu='docker compose up -d'
+alias dkcd='docker compose down'
+alias dkps='docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"'
+alias dkclean='docker system prune'
+alias dklogs='docker logs -f'
+
+
+############################################
+# SYSTEM — OS-SPECIFIC
+############################################
+
+# --- Debian / Ubuntu / WSL ---
+if command -v apt >/dev/null 2>&1; then
+    # FIX: full-upgrade instead of upgrade.
+    # 'apt upgrade' holds back packages that need new or removed deps.
+    # 'apt full-upgrade' handles those correctly — right choice for Debian.
+    alias apt-up='sudo apt update && sudo apt full-upgrade -y && sudo apt autoremove -y'
+    alias apt-search='apt search'
+    alias apt-show='apt show'
+    alias apt-list='apt list --installed'
+fi
+
+# FIX: update-grub exists on Debian as well as Arch.
+# Guard it by checking the binary — correct for both systems.
+if command -v update-grub >/dev/null 2>&1; then
+    alias update-grub='sudo update-grub'
+fi
+
+# --- macOS ---
+if [[ "$OSTYPE" == darwin* ]]; then
+    alias brewup='brew update && brew upgrade && brew cleanup'
+    alias brewinfo='brew info'
+    alias brewlist='brew list'
+    # Clipboard shortcuts (macOS only)
+    alias pbp='pbpaste'
+    alias pbc='pbcopy'
+    # Open current directory in Finder
+    alias finder='open .'
+fi
+
+
+############################################
+# VPN (OpenVPN via systemctl)
+# systemctl is available on Debian/WSL but NOT on macOS
+############################################
+
+if command -v systemctl >/dev/null 2>&1; then
+    # Rename these to match your actual OpenVPN service name
+    # Check yours with: systemctl list-units | grep openvpn
+    alias vpn-start='sudo systemctl start openvpn-client@myvpn'
+    alias vpn-stop='sudo systemctl stop openvpn-client@myvpn'
+    alias vpn-status='sudo systemctl status openvpn-client@myvpn'
+fi
+
+
+############################################
+# MISC TOOLS — add your own machine-specific tools here
+# Example (guarded so it only loads if the binary exists):
+# if [ -x '/path/to/your/tool' ]; then
+#     alias mytool='/path/to/your/tool'
+# fi
+############################################
