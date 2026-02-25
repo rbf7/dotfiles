@@ -135,7 +135,7 @@ info "Checking zplug..."
 # Set ZPLUG_HOME — check for init.zsh, not just directory existence.
 # Homebrew can create the zplug dir but leave it broken/incomplete.
 # Prefer ~/.zplug (curl install) over Homebrew paths.
-if [[ -z "$ZPLUG_HOME" ]]; then
+if [[ -z "${ZPLUG_HOME:-}" ]]; then
   if   [[ -f "$HOME/.zplug/init.zsh" ]];           then export ZPLUG_HOME="$HOME/.zplug"
   elif [[ -f /opt/homebrew/opt/zplug/init.zsh ]];  then export ZPLUG_HOME=/opt/homebrew/opt/zplug
   elif [[ -f /usr/local/opt/zplug/init.zsh ]];     then export ZPLUG_HOME=/usr/local/opt/zplug
@@ -163,7 +163,7 @@ if [[ "$_zplug_found" == true ]]; then
   # zplug keeps retrying them even after .zshrc is fixed — causing
   # "Failed to install" errors forever. All plugin definitions live
   # in .zshrc so packages.zsh should be empty.
-  if [[ -n "$ZPLUG_HOME" && -f "$ZPLUG_HOME/packages.zsh" ]]; then
+  if [[ -n "${ZPLUG_HOME:-}" && -f "$ZPLUG_HOME/packages.zsh" ]]; then
     _ghost=$(grep -v '^\s*$' "$ZPLUG_HOME/packages.zsh" 2>/dev/null || true)
     if [[ -n "$_ghost" ]]; then
       warn "Found ghost entries in $ZPLUG_HOME/packages.zsh:"
