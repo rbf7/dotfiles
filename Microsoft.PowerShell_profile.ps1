@@ -181,8 +181,8 @@ function lt  { Get-ChildItem -Force @args | Sort-Object LastWriteTime -Descendin
 function lS  { Get-ChildItem -Force @args | Sort-Object Length -Descending }
 
 # --- Editor ---
-Set-Alias -Name vi  -Value vim  -Option AllScope -ErrorAction SilentlyContinue
-Set-Alias -Name vim -Value vim  -Option AllScope -ErrorAction SilentlyContinue
+Set-Alias -Name vi  -Value vim  -Option AllScope -Force -ErrorAction SilentlyContinue
+Set-Alias -Name vim -Value vim  -Option AllScope -Force -ErrorAction SilentlyContinue
 
 # --- Grep equivalent ---
 function grep { Select-String @args }
@@ -208,8 +208,10 @@ function gitupdate {
     }
 }
 
-Set-Alias -Name gp  -Value gitpush
-Set-Alias -Name gu  -Value gitupdate
+# NOTE: 'gp' is reserved by PowerShell (Get-ItemProperty) — using 'gpush' instead
+# NOTE: always use -Force on Set-Alias to avoid read-only conflicts on re-load
+Set-Alias -Name gpush -Value gitpush  -Force
+Set-Alias -Name gup   -Value gitupdate -Force
 
 function gs  { git status }
 function gl  { git log --oneline --graph --decorate -15 }
@@ -224,7 +226,7 @@ function gst { git stash }
 function gstp{ git stash pop }
 
 # --- Python ---
-Set-Alias -Name py -Value python
+Set-Alias -Name py -Value python -Force
 
 function venv {
     python -m venv .venv
@@ -242,7 +244,7 @@ function nrt { npm run test }
 function nri { npm install @args }
 
 # --- Terraform ---
-Set-Alias -Name tf -Value terraform
+Set-Alias -Name tf -Value terraform -Force
 function tfi { terraform init }
 function tfp { terraform plan }
 function tfa { terraform apply }
@@ -284,7 +286,7 @@ function cpu { composer update }
 function cpd { composer dump-autoload }
 
 # --- Docker ---
-Set-Alias -Name dk -Value docker
+Set-Alias -Name dk -Value docker -Force
 function dkc    { docker compose @args }
 function dkcu   { docker compose up -d }
 function dkcd   { docker compose down }
@@ -310,7 +312,119 @@ function vpn-status { Get-Service    "OpenVPNServiceInteractive" -ErrorAction Si
 
 
 # =============================================================================
-# 6. STARTUP MESSAGE
+# 6. IDE TERMINAL INTEGRATION
+# =============================================================================
+
+# --- VS Code ---
+# Enables shell integration: command decorations, terminal history, quick fix
+# Only activates when running inside VS Code's integrated terminal
+if ($env:TERM_PROGRAM -eq "vscode") {
+    . "$(code --locate-shell-integration-path pwsh 2>$null)"
+}
+
+# Useful VS Code shortcuts
+function vsc  { code . }                        # open current dir in VS Code
+function vscd { code --diff @args }             # diff two files: vscd file1 file2
+function vsca { code --add @args }              # add folder to current workspace
+
+
+# --- IntelliJ IDEA ---
+# Opens current directory or a specific file/project in IDEA
+# Requires: Tools → Create Command-line Launcher in IDEA (creates 'idea' binary)
+function idea {
+    if (Get-Command idea -ErrorAction SilentlyContinue) {
+        & idea @args
+    } else {
+        # Fallback: try common install paths
+        $ideaPaths = @(
+            "$env:LOCALAPPDATA\JetBrains\Toolbox\apps\IDEA-U\ch-0\*\bin\idea64.exe",
+            "$env:LOCALAPPDATA\JetBrains\Toolbox\apps\IDEA-C\ch-0\*\bin\idea64.exe",
+            "C:\Program Files\JetBrains\IntelliJ IDEA*\bin\idea64.exe"
+        )
+        $ideaBin = $ideaPaths | ForEach-Object { Get-Item $_ -ErrorAction SilentlyContinue } |
+                   Select-Object -First 1
+        if ($ideaBin) { & $ideaBin @args }
+        else { Write-Host "IDEA not found. Enable 'idea' CLI in Tools → Create Command-line Launcher." -ForegroundColor Yellow }
+    }
+}
+
+
+# --- PyCharm ---
+# Requires: Tools → Create Command-line Launcher in PyCharm (creates 'charm' binary)
+function charm {
+    if (Get-Command charm -ErrorAction SilentlyContinue) {
+        & charm @args
+    } else {
+        $charmPaths = @(
+            "$env:LOCALAPPDATA\JetBrains\Toolbox\apps\PyCharm-P\ch-0\*\bin\pycharm64.exe",
+            "$env:LOCALAPPDATA\JetBrains\Toolbox\apps\PyCharm-C\ch-0\*\bin\pycharm64.exe",
+            "C:\Program Files\JetBrains\PyCharm*\bin\pycharm64.exe"
+        )
+        $charmBin = $charmPaths | ForEach-Object { Get-Item $_ -ErrorAction SilentlyContinue } |
+                    Select-Object -First 1
+        if ($charmBin) { & $charmBin @args }
+        else { Write-Host "PyCharm not found. Enable 'charm' CLI in Tools → Create Command-line Launcher." -ForegroundColor Yellow }
+    }
+}
+
+
+# =============================================================================
+# 7. GITHUB COPILOT / CODEX CLI
+# =============================================================================
+
+# --- GitHub Copilot CLI (gh copilot) ---
+# Install: scoop install gh  then: gh extension install github/gh-copilot
+# Usage:
+#   ghcs "how do I list files by size"     — suggest a shell command
+#   ghce "why is my docker build failing"  — explain a command or error
+if (Get-Command gh -ErrorAction SilentlyContinue) {
+    # Aliases for gh copilot suggest and explain
+    function ghcs {
+        gh copilot suggest -t shell @args
+    }
+    function ghce {
+        gh copilot explain @args
+    }
+
+    # git-specific suggest shorthand
+    function ghcg {
+        gh copilot suggest -t git @args
+    }
+
+    # Tab completion for gh if not already registered
+    if (-not (Get-Command __gh_complete -ErrorAction SilentlyContinue)) {
+        gh completion -s powershell | Out-String | Invoke-Expression
+    }
+} else {
+    # gh not installed — define stubs that explain how to install
+    function ghcs { Write-Host "gh CLI not found. Install: scoop install gh" -ForegroundColor Yellow }
+    function ghce { Write-Host "gh CLI not found. Install: scoop install gh" -ForegroundColor Yellow }
+    function ghcg { Write-Host "gh CLI not found. Install: scoop install gh" -ForegroundColor Yellow }
+}
+
+
+# --- GitHub Codex CLI ---
+# Install: npm install -g @githubnext/github-copilot-cli  (now part of gh copilot)
+# Or via npm: npm install -g @github/copilot-cli
+# Usage:
+#   codex "create a REST API in Python"
+if (Get-Command codex -ErrorAction SilentlyContinue) {
+    # Enable tab completion — codex uses 'powershell' not 'pwsh' as the shell name.
+    # Guard against empty output to avoid 'Cannot bind argument' errors.
+    try {
+        $codexCompletion = codex completion powershell 2>$null
+        if ($codexCompletion) { $codexCompletion | Out-String | Invoke-Expression }
+    } catch {}
+} else {
+    function codex {
+        Write-Host "Codex CLI not found." -ForegroundColor Yellow
+        Write-Host "Install: npm install -g @githubnext/github-copilot-cli" -ForegroundColor DarkGray
+    }
+}
+
+
+# =============================================================================
+# 8. STARTUP MESSAGE
 # =============================================================================
 
 Write-Host ""
