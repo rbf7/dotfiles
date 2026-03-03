@@ -330,8 +330,27 @@ fi
 
 if zplug check "zsh-users/zsh-autosuggestions"; then
     bindkey '^F' autosuggest-accept
-    bindkey '^ ' autosuggest-accept
 fi
+
+_setup_fzf_history_widget() {
+    command -v fzf >/dev/null 2>&1 || return 0
+    [[ -o zle ]] || return 0
+
+    fzf_history_widget() {
+        local selected
+        selected=$(fc -rl 1 | sed 's/^[[:space:]]*[0-9][0-9]*[[:space:]]*//' | awk '!seen[$0]++' | fzf --height 40% --reverse --prompt='history> ')
+        [[ -z "$selected" ]] && zle redisplay && return 0
+
+        BUFFER="$selected"
+        CURSOR=${#BUFFER}
+        zle redisplay
+    }
+
+    zle -N fzf-history-widget fzf_history_widget
+    bindkey '^ ' fzf-history-widget
+}
+
+_setup_fzf_history_widget
 
 
 ############################################
@@ -508,8 +527,9 @@ alias myip='curl -s ifconfig.me && echo'
 # --- VS Code ---
 # Enables shell integration: command decorations, history, quick fix
 # Only activates when running inside VS Code's integrated terminal
-if [[ "$TERM_PROGRAM" == "vscode" ]]; then
-    . "$(code --locate-shell-integration-path zsh 2>/dev/null)"
+if [[ "$TERM_PROGRAM" == "vscode" ]] && command -v code >/dev/null 2>&1; then
+    _vscode_shell_integration_path="$(code --locate-shell-integration-path zsh 2>/dev/null || true)"
+    [[ -n "$_vscode_shell_integration_path" ]] && . "$_vscode_shell_integration_path"
 fi
 
 # VS Code shortcuts
@@ -636,9 +656,13 @@ _show_setup_help() {
   Keybindings:
     Ctrl+P / ↑      — history search up
     Ctrl+N / ↓      — history search down
-    Ctrl+F / Ctrl+Space — accept autosuggestion
+    Ctrl+F          — accept autosuggestion
+    Ctrl+Space      — open fzf history picker
 
 EOF
 }
 
 _show_setup_help
+
+
+

@@ -39,7 +39,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 
 ### Kiro Terminal Integration
 
-If you use [Kiro](https://kiro.dev) (Amazon's AI code editor), the profile automatically enables shell integration when running inside Kiro's terminal. No setup needed — the line is already there and only activates when `$env:TERM_PROGRAM` equals `"kiro"`, so it's completely harmless in any other terminal.
+If you use [Kiro](https://kiro.dev) (Amazon's AI code editor), the profile enables shell integration when running inside Kiro's terminal **and** when the `kiro` CLI is available. No setup needed — it only activates when `$env:TERM_PROGRAM` equals `"kiro"` and the command exists, so it's harmless in other terminals.
 
 ### Oh My Posh (prompt)
 
@@ -219,7 +219,7 @@ Get-Service | Where-Object { $_.Name -like "*vpn*" -or $_.Name -like "*openvpn*"
 
 ### VS Code
 
-Shell integration activates automatically when PowerShell runs inside VS Code's terminal — no setup needed. It enables command decorations, terminal history, and quick fix suggestions.
+Shell integration activates automatically when PowerShell runs inside VS Code's terminal **and** the `code` CLI is available — no extra setup needed. It enables command decorations, terminal history, and quick fix suggestions.
 
 | Alias | Command |
 |-------|---------|
@@ -289,8 +289,27 @@ Tab completion for `gh` is registered automatically when the profile loads.
 
 Tab completion for `codex` is also registered automatically if Codex CLI is installed. Note: the Codex CLI uses `powershell` (not `pwsh`) as the shell identifier — the profile handles this correctly.
 
+## Testing (Pester)
+
+Run the PowerShell tests from the repository root:
+
+```powershell
+Invoke-Pester -Path .\tests\powershell
+```
+
+If tests are executed from a `\\wsl.localhost\...` path and script signing blocks execution, use a process-scoped bypass for the current shell only:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+Invoke-Pester -Path .\tests\powershell
+```
+
+If your environment still loads Windows PowerShell Pester 3.x, keep using the tests in this repo (they are written with Pester 3-compatible `Should` syntax).
+
 ---
 
+
+## Troubleshooting
 
 **Icons don't render / show as boxes**
 Install a Nerd Font: `oh-my-posh font install` then set it in Windows Terminal Settings → Font face. Recommended: `CaskaydiaCove Nerd Font` or `JetBrainsMono Nerd Font`.
@@ -322,9 +341,22 @@ Get-ExecutionPolicy -List
 ```
 If MachinePolicy or UserPolicy shows AllSigned or Restricted, IT is blocking it. If both show Undefined, Unblock-File + RemoteSigned is all you need.
 
+For one-off test execution on `\\wsl.localhost\...` paths, you can also use:
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+```
+
 **Alias is not writeable: alias gp is read-only**
 
 gp is a built-in PowerShell read-only alias for Get-ItemProperty. The profile uses gpush and gup instead, and all Set-Alias calls include -Force. Pull the latest profile — already fixed.
+
+**`-Match` / `-BeNullOrEmpty` is not a valid Should operator (Pester)**
+
+You are running an older Pester engine (typically 3.x) against tests written for newer syntax. Pull the latest `tests/powershell/*.Tests.ps1` from this repo (already converted to Pester 3-compatible `Should Match` / `Should BeNullOrEmpty`) or upgrade to Pester 5+.
+
+**`Get-PSReadLineKeyHandler` already exists when reloading profile**
+
+This is caused by importing PSReadLine repeatedly. The profile now imports PSReadLine only when not already loaded. Pull the latest `Microsoft.PowerShell_profile.ps1`, then restart PowerShell and run `. $PROFILE` once.
 
 **Symlink requires Administrator**
 Run Windows Terminal as Administrator when creating the symlink, or use the copy method instead.
@@ -347,3 +379,5 @@ Scoop installs to `~\scoop\shims` — make sure it's on your PATH:
 scoop install oh-my-posh
 # If still not found, restart Windows Terminal — scoop updates PATH automatically
 ```
+
+

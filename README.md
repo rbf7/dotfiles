@@ -105,14 +105,14 @@ Plugins load gracefully — if `zplug` isn't installed, the config tells you exa
 
 ### Install zplug
 
-```bash
-# macOS
-brew install zplug
+Use the official curl installer on all platforms (recommended):
 
-# Debian / Ubuntu / WSL
+```bash
 curl -sL --proto-redir -all,https \
   https://raw.githubusercontent.com/zplug/zplug/master/scripts/install.sh | zsh
 ```
+
+> Note: avoid `brew install zplug` here; this repo expects the curl layout for consistent behavior.
 
 ### Troubleshooting: "Failed to install" on macOS
 
@@ -192,7 +192,20 @@ Caused by `set -u` (strict mode) in the script treating an unset `ZPLUG_HOME` as
 |------|--------|
 | `Ctrl+P` or `↑` | History search up (substring match) |
 | `Ctrl+N` or `↓` | History search down |
-| `Ctrl+F` or `Ctrl+Space` | Accept autosuggestion |
+| `Ctrl+F` | Accept autosuggestion |
+| `Ctrl+Space` | Open `fzf-history-widget` history picker (when `fzf` is installed) |
+
+### `fzf` requirement for `Ctrl+Space`
+
+The `fzf-history-widget` keybinding requires the `fzf` binary to be installed.
+
+```bash
+# macOS
+brew install fzf
+
+# Debian / Ubuntu / WSL
+sudo apt update && sudo apt install -y fzf
+```
 
 ---
 
@@ -475,3 +488,7 @@ To add any of these, copy the pattern from an existing language block in `precmd
 ```bash
 bash install.sh
 ```
+
+
+
+

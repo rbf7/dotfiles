@@ -80,8 +80,14 @@ backup_if_needed() {
 link_file() {
   local src="$1"
   local dest="$2"
+
+  if [[ -d "$dest" && ! -L "$dest" ]]; then
+    error "Refusing to overwrite directory target: $dest"
+    return 1
+  fi
+
   backup_if_needed "$dest"
-  ln -sf "$src" "$dest"
+  ln -sfn "$src" "$dest"
   success "Linked: $dest → $src"
 }
 
@@ -158,7 +164,7 @@ if [[ "$_zplug_found" == true ]]; then
   # "Failed to install" errors forever. All plugin definitions live
   # in .zshrc so packages.zsh should be empty.
   if [[ -n "${ZPLUG_HOME:-}" && -f "$ZPLUG_HOME/packages.zsh" ]]; then
-    _ghost=$(grep -v '^\s*$' "$ZPLUG_HOME/packages.zsh" 2>/dev/null || true)
+    _ghost=$(grep -v '^[[:space:]]*$' "$ZPLUG_HOME/packages.zsh" 2>/dev/null || true)
     if [[ -n "$_ghost" ]]; then
       warn "Found ghost entries in $ZPLUG_HOME/packages.zsh:"
       echo "$_ghost"

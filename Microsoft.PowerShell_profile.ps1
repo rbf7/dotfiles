@@ -69,7 +69,10 @@ if (Get-Command oh-my-posh -ErrorAction SilentlyContinue) {
 #    This line enables shell integration features inside Kiro's terminal
 # =============================================================================
 
-if ($env:TERM_PROGRAM -eq "kiro") { . "$(kiro --locate-shell-integration-path pwsh)" }
+if (($env:TERM_PROGRAM -eq "kiro") -and (Get-Command kiro -ErrorAction SilentlyContinue)) {
+    $kiroIntegrationPath = kiro --locate-shell-integration-path pwsh 2>$null
+    if ($kiroIntegrationPath) { . $kiroIntegrationPath }
+}
 
 
 # =============================================================================
@@ -77,18 +80,30 @@ if ($env:TERM_PROGRAM -eq "kiro") { . "$(kiro --locate-shell-integration-path pw
 #    Install: scoop install psreadline  (or: Install-Module PSReadLine -Force)
 # =============================================================================
 
-if (Get-Module -ListAvailable -Name PSReadLine) {
-    Import-Module PSReadLine
+$psReadLineLoaded = Get-Module -Name PSReadLine -ErrorAction SilentlyContinue
+if (-not $psReadLineLoaded -and (Get-Module -ListAvailable -Name PSReadLine)) {
+    try {
+        Import-Module PSReadLine -ErrorAction Stop
+    } catch {
+        Write-Host ""
+        Write-Host "  PSReadLine failed to import: $($_.Exception.Message)" -ForegroundColor DarkGray
+        Write-Host ""
+    }
+}
 
+if (Get-Command Set-PSReadLineOption -ErrorAction SilentlyContinue) {
     # Behaviour
     Set-PSReadLineOption -EditMode Emacs                          # familiar keybindings
     Set-PSReadLineOption -HistorySearchCursorMovesToEnd           # cursor at end on history search
     Set-PSReadLineOption -MaximumHistoryCount 200000
     Set-PSReadLineOption -HistoryNoDuplicates
 
-    # Autosuggestions (like zsh-autosuggestions)
-    Set-PSReadLineOption -PredictionSource History
-    Set-PSReadLineOption -PredictionViewStyle ListView            # dropdown list view
+    # Autosuggestions (like zsh-autosuggestions).
+    # Some non-interactive hosts do not support prediction rendering.
+    try {
+        Set-PSReadLineOption -PredictionSource History
+        Set-PSReadLineOption -PredictionViewStyle ListView        # dropdown list view
+    } catch {}
 
     # Tokyo Night colours for syntax highlighting
     Set-PSReadLineOption -Colors @{
@@ -325,7 +340,10 @@ function vpn-status { Get-Service    "OpenVPNServiceInteractive" -ErrorAction Si
 # Enables shell integration: command decorations, terminal history, quick fix
 # Only activates when running inside VS Code's integrated terminal
 if ($env:TERM_PROGRAM -eq "vscode") {
-    . "$(code --locate-shell-integration-path pwsh 2>$null)"
+    if (Get-Command code -ErrorAction SilentlyContinue) {
+        $vscodeIntegrationPath = code --locate-shell-integration-path pwsh 2>$null
+        if ($vscodeIntegrationPath) { . $vscodeIntegrationPath }
+    }
 }
 
 # Useful VS Code shortcuts
@@ -338,8 +356,9 @@ function vsca { code --add @args }              # add folder to current workspac
 # Opens current directory or a specific file/project in IDEA
 # Requires: Tools → Create Command-line Launcher in IDEA (creates 'idea' binary)
 function idea {
-    if (Get-Command idea -ErrorAction SilentlyContinue) {
-        & idea @args
+    $ideaCmd = Get-Command idea -CommandType Application -ErrorAction SilentlyContinue
+    if ($ideaCmd) {
+        & $ideaCmd.Source @args
     } else {
         # Fallback: try common install paths
         $ideaPaths = @(
@@ -349,7 +368,7 @@ function idea {
         )
         $ideaBin = $ideaPaths | ForEach-Object { Get-Item $_ -ErrorAction SilentlyContinue } |
                    Select-Object -First 1
-        if ($ideaBin) { & $ideaBin @args }
+        if ($ideaBin) { & $ideaBin.FullName @args }
         else { Write-Host "IDEA not found. Enable 'idea' CLI in Tools → Create Command-line Launcher." -ForegroundColor Yellow }
     }
 }
@@ -358,8 +377,9 @@ function idea {
 # --- PyCharm ---
 # Requires: Tools → Create Command-line Launcher in PyCharm (creates 'charm' binary)
 function charm {
-    if (Get-Command charm -ErrorAction SilentlyContinue) {
-        & charm @args
+    $charmCmd = Get-Command charm -CommandType Application -ErrorAction SilentlyContinue
+    if ($charmCmd) {
+        & $charmCmd.Source @args
     } else {
         $charmPaths = @(
             "$env:LOCALAPPDATA\JetBrains\Toolbox\apps\PyCharm-P\ch-0\*\bin\pycharm64.exe",
@@ -368,7 +388,7 @@ function charm {
         )
         $charmBin = $charmPaths | ForEach-Object { Get-Item $_ -ErrorAction SilentlyContinue } |
                     Select-Object -First 1
-        if ($charmBin) { & $charmBin @args }
+        if ($charmBin) { & $charmBin.FullName @args }
         else { Write-Host "PyCharm not found. Enable 'charm' CLI in Tools → Create Command-line Launcher." -ForegroundColor Yellow }
     }
 }
@@ -437,3 +457,4 @@ Write-Host ""
 Write-Host "  PowerShell $($PSVersionTable.PSVersion) — Developer Profile loaded." -ForegroundColor DarkGray
 Write-Host "  Run devinfo to see installed tool versions." -ForegroundColor DarkGray
 Write-Host ""
+
