@@ -286,7 +286,7 @@ Caused by `set -u` (strict mode) in the script treating an unset `ZPLUG_HOME` as
 | `dkcu` | `docker compose up -d` |
 | `dkcd` | `docker compose down` |
 | `dkps` | Pretty `docker ps` with names/ports |
-| `dkclean` | `docker system prune -f` |
+| `dkclean` | `docker system prune` — prompts for confirmation |
 | `dklogs` | `docker logs -f` |
 
 ### Debian / Ubuntu / WSL
@@ -325,6 +325,93 @@ Caused by `set -u` (strict mode) in the script treating an unset `ZPLUG_HOME` as
 
 ---
 
+## IDE Integration
+
+### VS Code
+
+Shell integration activates automatically when Zsh runs inside VS Code's integrated terminal — no setup needed.
+
+| Alias | Command |
+|-------|---------|
+| `vsc` | `code .` — open current dir |
+| `vscd file1 file2` | Open diff view |
+| `vsca folder` | Add folder to current workspace |
+
+### IntelliJ IDEA / PyCharm
+
+Enable the CLI launcher once inside the IDE: **Tools → Create Command-line Launcher**. This creates `idea` / `charm` on your PATH.
+
+```bash
+idea .      # open current directory in IDEA
+charm .     # open current directory in PyCharm
+
+# Shortcuts defined in .zshrc
+idea-here   # same as: idea .
+charm-here  # same as: charm .
+```
+
+On macOS, the `.zshrc` also searches JetBrains Toolbox script paths automatically if the binary isn't on PATH yet:
+`~/Library/Application Support/JetBrains/Toolbox/scripts/`
+
+---
+
+## GitHub Copilot / Codex CLI
+
+### Install `gh` CLI
+
+`gh` is **not** in the default Debian apt repo — it needs GitHub's own apt repository.
+
+```bash
+# macOS
+brew install gh
+
+# Debian / Ubuntu / WSL — must add GitHub's repo first
+curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+  | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] \
+  https://cli.github.com/packages stable main" \
+  | sudo tee /etc/apt/sources.list.d/github-cli.list
+sudo apt update && sudo apt install gh
+
+# Windows (PowerShell — scoop)
+scoop install gh
+```
+
+### Install Copilot extension and Codex CLI
+
+```bash
+# Authenticate first
+gh auth login
+
+# Install Copilot extension (all platforms)
+gh extension install github/gh-copilot
+
+# Install Codex CLI (requires Node/npm — all platforms)
+npm install -g @githubnext/github-copilot-cli
+```
+
+### Commands
+
+| Command | What it does |
+|---------|-------------|
+| `ghcs "query"` | Suggest a **shell** command |
+| `ghce "query"` | **Explain** a command or error |
+| `ghcg "query"` | Suggest a **git** command |
+| `codex "query"` | Full Codex CLI for code generation |
+
+### Examples
+
+```bash
+ghcs "find all files larger than 100mb modified in the last week"
+ghce "what does git rebase -i HEAD~3 do"
+ghcg "undo last commit but keep my changes"
+codex "write a bash script that monitors disk usage and alerts at 90%"
+```
+
+Tab completion for `gh` registers automatically when the shell loads.
+
+---
+
 ## OS Support
 
 | Environment | Status |
@@ -335,7 +422,7 @@ Caused by `set -u` (strict mode) in the script treating an unset `ZPLUG_HOME` as
 | WSL 2 (Windows) | ✅ Full support, auto-detected |
 | Git Bash | ⚠️ Runs Bash, not Zsh — use a separate `.bashrc` |
 
-All system-specific aliases (`apt`, `brew`, VPN, etc.) are wrapped in `command -v` guards and only activate if the tool exists on the current machine. Arch/Manjaro (`pacman`) is not a target — those aliases have been removed.
+All system-specific aliases (`apt`, `brew`, VPN, etc.) are wrapped in `command -v` guards and only activate if the tool exists on the current machine.
 
 ---
 

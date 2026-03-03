@@ -210,7 +210,80 @@ Get-Service | Where-Object { $_.Name -like "*vpn*" -or $_.Name -like "*openvpn*"
 
 ---
 
-## Troubleshooting
+## IDE Integration
+
+### VS Code
+
+Shell integration activates automatically when PowerShell runs inside VS Code's terminal — no setup needed. It enables command decorations, terminal history, and quick fix suggestions.
+
+| Alias | Command |
+|-------|---------|
+| `vsc` | `code .` — open current dir |
+| `vscd file1 file2` | Open diff view |
+| `vsca folder` | Add folder to current workspace |
+
+### IntelliJ IDEA
+
+Requires enabling the command-line launcher first: **Tools → Create Command-line Launcher** inside IDEA. This creates the `idea` binary on your PATH.
+
+```powershell
+idea .          # open current directory
+idea myproject  # open specific project
+```
+
+The profile falls back to searching common JetBrains Toolbox install paths if `idea` isn't on PATH yet.
+
+### PyCharm
+
+Same as IDEA — enable via **Tools → Create Command-line Launcher** to create the `charm` binary.
+
+```powershell
+charm .         # open current directory
+charm myproject # open specific project
+```
+
+---
+
+## GitHub Copilot / Codex CLI
+
+### Install
+
+```powershell
+# 1. Install gh CLI
+scoop install gh
+
+# 2. Authenticate
+gh auth login
+
+# 3. Install Copilot extension
+gh extension install github/gh-copilot
+
+# 4. Install Codex CLI
+npm install -g @githubnext/github-copilot-cli
+```
+
+### Commands
+
+| Command | What it does |
+|---------|-------------|
+| `ghcs "query"` | Suggest a **shell** command for your query |
+| `ghce "query"` | **Explain** a command or error message |
+| `ghcg "query"` | Suggest a **git** command for your query |
+| `codex "query"` | Full Codex CLI for code generation |
+
+### Examples
+
+```powershell
+ghcs "find all files larger than 100mb"
+ghce "what does git rebase -i HEAD~3 do"
+ghcg "undo last commit but keep my changes"
+codex "write a PowerShell script to monitor disk usage"
+```
+
+Tab completion for `gh` is registered automatically when the profile loads.
+
+---
+
 
 **Icons don't render / show as boxes**
 Install a Nerd Font: `oh-my-posh font install` then set it in Windows Terminal Settings → Font face. Recommended: `CaskaydiaCove Nerd Font` or `JetBrainsMono Nerd Font`.

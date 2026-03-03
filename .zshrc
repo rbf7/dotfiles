@@ -225,13 +225,7 @@ _install_zplug_msg() {
     echo ""
     echo "zplug is not installed. It is required for plugins (history search, autosuggestions, completions)."
     echo ""
-    if [ "$_ZSH_OS" = "mac" ]; then
-        echo "  brew install zplug"
-    elif [ "$_ZSH_OS" = "linux" ] || [ "$_ZSH_OS" = "wsl" ]; then
-        echo "  sudo apt update && sudo apt install -y git curl"
-    fi
-    echo ""
-    echo "Universal method:"
+    echo "Install via curl (recommended — brew install zplug produces an incomplete install):"
     echo "  curl -sL --proto-redir -all,https \\"
     echo "    https://raw.githubusercontent.com/zplug/zplug/master/scripts/install.sh | zsh"
     echo ""
@@ -508,7 +502,106 @@ alias myip='curl -s ifconfig.me && echo'
 
 
 ############################################
-# 14. STARTUP HELP
+# 15. IDE TERMINAL INTEGRATION
+############################################
+
+# --- VS Code ---
+# Enables shell integration: command decorations, history, quick fix
+# Only activates when running inside VS Code's integrated terminal
+if [[ "$TERM_PROGRAM" == "vscode" ]]; then
+    . "$(code --locate-shell-integration-path zsh 2>/dev/null)"
+fi
+
+# VS Code shortcuts
+alias vsc='code .'                        # open current dir in VS Code
+alias vscd='code --diff'                  # diff two files: vscd file1 file2
+alias vsca='code --add'                   # add folder to current workspace
+
+
+# --- IntelliJ IDEA ---
+# Requires: Tools → Create Command-line Launcher in IDEA (creates 'idea' binary)
+# On macOS via Toolbox it's usually at /usr/local/bin/idea
+if ! command -v idea >/dev/null 2>&1; then
+    # Try common Toolbox locations on macOS
+    for _idea_path in \
+        "$HOME/Library/Application Support/JetBrains/Toolbox/scripts/idea" \
+        "/usr/local/bin/idea"
+    do
+        if [ -x "$_idea_path" ]; then
+            alias idea="'$_idea_path'"
+            break
+        fi
+    done
+fi
+# Open current dir in IDEA if no args given
+function idea-here() { idea "${1:-.}" }
+
+
+# --- PyCharm ---
+# Requires: Tools → Create Command-line Launcher in PyCharm (creates 'charm' binary)
+if ! command -v charm >/dev/null 2>&1; then
+    for _charm_path in \
+        "$HOME/Library/Application Support/JetBrains/Toolbox/scripts/pycharm" \
+        "/usr/local/bin/charm"
+    do
+        if [ -x "$_charm_path" ]; then
+            alias charm="'$_charm_path'"
+            break
+        fi
+    done
+fi
+function charm-here() { charm "${1:-.}" }
+
+
+############################################
+# 16. GITHUB COPILOT / CODEX CLI
+############################################
+
+# --- GitHub Copilot CLI (gh copilot) ---
+# Install gh:         brew install gh  (macOS)
+#                     see https://cli.github.com/manual/installation for Debian
+#                     — gh is NOT in the default Debian apt repo, needs GitHub's repo
+# Install extension:  gh extension install github/gh-copilot
+# Usage:
+#   ghcs "how do I find files modified in the last 7 days"  — suggest shell cmd
+#   ghce "explain git rebase -i HEAD~3"                     — explain a command
+#   ghcg "undo last commit but keep changes"                — git-specific suggest
+
+if command -v gh >/dev/null 2>&1; then
+    # Suggest a shell command
+    function ghcs() { gh copilot suggest -t shell "$*" }
+    # Explain a command or error
+    function ghce() { gh copilot explain "$*" }
+    # Git-specific suggest
+    function ghcg() { gh copilot suggest -t git "$*" }
+
+    # gh tab completion (zsh)
+    if command -v gh >/dev/null 2>&1; then
+        eval "$(gh completion -s zsh 2>/dev/null)"
+    fi
+else
+    function ghcs() { echo "gh CLI not found. macOS: brew install gh  |  Debian: see https://cli.github.com/manual/installation" }
+    function ghce() { echo "gh CLI not found. macOS: brew install gh  |  Debian: see https://cli.github.com/manual/installation" }
+    function ghcg() { echo "gh CLI not found. macOS: brew install gh  |  Debian: see https://cli.github.com/manual/installation" }
+fi
+
+
+# --- GitHub Codex CLI ---
+# Install: npm install -g @githubnext/github-copilot-cli
+# Usage:   codex "write a bash script that monitors disk usage"
+if command -v codex >/dev/null 2>&1; then
+    # Enable tab completion if available
+    eval "$(codex completion zsh 2>/dev/null)" 2>/dev/null || true
+else
+    function codex() {
+        echo "Codex CLI not found."
+        echo "Install: npm install -g @githubnext/github-copilot-cli"
+    }
+fi
+
+
+############################################
+# 17. STARTUP HELP
 ############################################
 
 _show_setup_help() {
@@ -533,6 +626,12 @@ _show_setup_help() {
     devinfo         — print all installed tool versions
     reload          — reload this config
     j <pattern>     — autojump to a frequent directory
+    vsc             — open current dir in VS Code
+    idea-here       — open current dir in IntelliJ IDEA
+    charm-here      — open current dir in PyCharm
+    ghcs "query"    — Copilot: suggest a shell command
+    ghce "query"    — Copilot: explain a command or error
+    ghcg "query"    — Copilot: suggest a git command
 
   Keybindings:
     Ctrl+P / ↑      — history search up
