@@ -197,7 +197,7 @@ Matches the Zsh config keybindings:
 | `myip` | Print public IP |
 | `path` | Print `$PATH` one entry per line |
 | `now` | Print current datetime |
-| `edit-profile` | Open profile in `$EDITOR` |
+| `edit-profile` | Open profile in VS Code → Notepad++ → Notepad (whichever is found first) |
 
 ### VPN
 
