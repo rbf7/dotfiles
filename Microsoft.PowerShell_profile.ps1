@@ -303,7 +303,13 @@ function cls    { Clear-Host }
 function reload { . $PROFILE }
 
 # Open profile in editor
-function edit-profile { & $env:EDITOR $PROFILE }
+function edit-profile {
+    # $env:EDITOR is a Unix convention — not set on Windows by default.
+    # Falls back: VS Code → Notepad++ → Notepad
+    if     (Get-Command code      -ErrorAction SilentlyContinue) { code      $PROFILE }
+    elseif (Get-Command notepad++ -ErrorAction SilentlyContinue) { notepad++ $PROFILE }
+    else                                                          { notepad   $PROFILE }
+}
 
 # --- VPN (OpenVPN via sc/services — rename to match your service name) ---
 function vpn-start  { Start-Service  "OpenVPNServiceInteractive" -ErrorAction SilentlyContinue }
