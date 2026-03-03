@@ -2,7 +2,7 @@
 # =============================================================================
 # install.sh — Dotfiles installer
 # Targets: Debian / Ubuntu / WSL (Debian) / macOS
-# Usage:   bash install.sh
+# Usage:   bash install.sh   ← always use 'bash', never 'sh' or 'zsh'
 # =============================================================================
 
 set -euo pipefail
@@ -118,7 +118,7 @@ fi
 # Offer to set Zsh as default shell if it isn't already
 if [[ "$SHELL" != "$(command -v zsh)" ]]; then
   warn "Zsh is not your default shell (current: $SHELL)"
-  read -rp "  Set Zsh as default shell now? [y/N] " _reply
+  printf "  Set Zsh as default shell now? [y/N] "; read -r _reply
   if [[ "$_reply" =~ ^[Yy]$ ]]; then
     chsh -s "$(command -v zsh)"
     success "Default shell changed to Zsh. Log out and back in for it to take effect."
@@ -169,7 +169,7 @@ if [[ "$_zplug_found" == true ]]; then
   fi
 else
   warn "zplug not found."
-  read -rp "  Install zplug now? [y/N] " _reply
+  printf "  Install zplug now? [y/N] "; read -r _reply
   if [[ "$_reply" =~ ^[Yy]$ ]]; then
     # Always use curl — brew install zplug creates an incomplete directory
     # that causes "Failed to install" plugin errors.
@@ -193,7 +193,7 @@ if command -v autojump >/dev/null 2>&1; then
   success "autojump already installed."
 else
   warn "autojump not found."
-  read -rp "  Install autojump now? [y/N] " _reply
+  printf "  Install autojump now? [y/N] "; read -r _reply
   if [[ "$_reply" =~ ^[Yy]$ ]]; then
     if [[ "$OS" == "mac" ]]; then
       brew install autojump
@@ -250,7 +250,7 @@ if [[ "$OS" == "mac" ]]; then
     success "Homebrew found: $(brew --version | head -1)"
   else
     warn "Homebrew not found."
-    read -rp "  Install Homebrew now? [y/N] " _reply
+    printf "  Install Homebrew now? [y/N] "; read -r _reply
     if [[ "$_reply" =~ ^[Yy]$ ]]; then
       /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
       success "Homebrew installed."
