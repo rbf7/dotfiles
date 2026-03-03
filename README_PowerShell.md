@@ -21,12 +21,17 @@ New-Item -ItemType SymbolicLink -Path $PROFILE `
 # Option B — copy
 Copy-Item Microsoft.PowerShell_profile.ps1 $PROFILE -Force
 
-# 4. Allow profile to run (one-time, run as Administrator)
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+# 4. Allow profile to run — REQUIRED, one-time setup
+#    -Scope CurrentUser never requires Administrator rights
+#    Without this you get: "cannot be loaded... not digitally signed"
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 
 # 5. Reload
 . $PROFILE
 ```
+
+> **Corporate machine (OneDrive, managed by IT)?**
+> `-Scope CurrentUser` is safe and does not require admin rights — it only affects your own user account. If IT has locked `MachinePolicy` or `UserPolicy` you may need to ask them, but `CurrentUser` scope works on most managed machines.
 
 ---
 
@@ -117,8 +122,8 @@ Matches the Zsh config keybindings:
 
 | Alias | Command |
 |-------|---------|
-| `gp "msg"` | `git add . && commit && pull --rebase && push` |
-| `gu` | Refresh SSH agent for GitHub |
+| `gpush "msg"` | `git add . && commit && pull --rebase && push` |
+| `gup` | Refresh SSH agent for GitHub |
 | `gs` | `git status` |
 | `gl` | Pretty log graph (last 15) |
 | `gcb` | `git checkout -b` |
@@ -282,6 +287,8 @@ codex "write a PowerShell script to monitor disk usage"
 
 Tab completion for `gh` is registered automatically when the profile loads.
 
+Tab completion for `codex` is also registered automatically if Codex CLI is installed. Note: the Codex CLI uses `powershell` (not `pwsh`) as the shell identifier — the profile handles this correctly.
+
 ---
 
 
@@ -294,10 +301,30 @@ Scoop installs binaries to `~\scoop\shims` — restart Windows Terminal after in
 $env:PATH += ";$HOME\scoop\shims"
 ```
 
-**`cannot be loaded because running scripts is disabled`**
+**`cannot be loaded... not digitally signed`** (OneDrive / corporate machines)
+
+The most common cause on OneDrive-synced profiles: Windows attaches a Zone.Identifier stream to cloud-synced files marking them as from the internet. Two steps fix it permanently:
+
 ```powershell
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+# Step 1 — set execution policy (no admin needed, CurrentUser scope only)
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+
+# Step 2 — remove the internet zone flag from the profile file
+Unblock-File -Path $PROFILE
+
+# Step 3 — reload
+. $PROFILE
 ```
+
+To verify IT Group Policy is not the blocker:
+```powershell
+Get-ExecutionPolicy -List
+```
+If MachinePolicy or UserPolicy shows AllSigned or Restricted, IT is blocking it. If both show Undefined, Unblock-File + RemoteSigned is all you need.
+
+**Alias is not writeable: alias gp is read-only**
+
+gp is a built-in PowerShell read-only alias for Get-ItemProperty. The profile uses gpush and gup instead, and all Set-Alias calls include -Force. Pull the latest profile — already fixed.
 
 **Symlink requires Administrator**
 Run Windows Terminal as Administrator when creating the symlink, or use the copy method instead.
@@ -309,6 +336,10 @@ scoop install psreadline
 # Or via PowerShell Gallery
 Install-Module PSReadLine -Force -Scope CurrentUser
 ```
+
+**`Cannot bind argument to parameter 'Command' because it is an empty string`** (Codex CLI)
+
+Caused by `codex completion pwsh` — `pwsh` is not a valid shell name for the Codex CLI. The valid value is `powershell`. The profile now uses the correct name and guards against empty output before invoking. Pull the latest profile — already fixed.
 
 **Oh My Posh PATH not found after scoop install**
 Scoop installs to `~\scoop\shims` — make sure it's on your PATH:
