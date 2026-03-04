@@ -8,6 +8,12 @@
       "alignment": "left",
       "segments": [
         {
+          "type": "text",
+          "style": "plain",
+          "foreground": "#565f89",
+          "template": " "
+        },
+        {
           "type": "session",
           "style": "plain",
           "foreground": "#7aa2f7",
@@ -67,3 +73,6 @@
     }
   ]
 }
+
+
+

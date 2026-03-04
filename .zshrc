@@ -19,6 +19,13 @@ if [[ "$_ZSH_OS" == "linux" ]] && grep -qi microsoft /proc/version 2>/dev/null; 
   _ZSH_OS="wsl"
 fi
 
+# Small OS marker so zsh/WSL is visually distinct from Windows PowerShell.
+case "$_ZSH_OS" in
+  linux|wsl) _ZSH_OS_ICON="🐧" ;;
+  mac)       _ZSH_OS_ICON="🍎" ;;
+  *)         _ZSH_OS_ICON="" ;;
+esac
+
 
 ############################################
 # 1. BASIC SETUP
@@ -156,7 +163,7 @@ precmd() {
 #   ❯  green(114) on success, red(210) on error
 #   right: ✓(114) / ✗code(210)  time(60 dimmed)
 # ───────────────────────────────────────────────────────────────
-PROMPT='%F{111}%n%f%F{60}@%f%F{141}%m%f %F{117}%~%f%F{114}${vcs_info_msg_0_}%f${_pp}${_pn}${_pt}${_pj}${_pgo}${_prs}${_prb}${_pphp}${_pkt}${_pa}${_pd}
+PROMPT='%F{60}${_ZSH_OS_ICON}%f %F{111}%n%f%F{60}@%f%F{141}%m%f %F{117}%~%f%F{114}${vcs_info_msg_0_}%f${_pp}${_pn}${_pt}${_pj}${_pgo}${_prs}${_prb}${_pphp}${_pkt}${_pa}${_pd}
 %(?.%F{114}❯%f.%F{210}❯%f) '
 
 RPROMPT='%(?.%F{114}✓%f.%F{210}✗ %?%f) %F{60}%T%f'
@@ -663,6 +670,8 @@ EOF
 }
 
 _show_setup_help
+
+
 
 
 
