@@ -57,7 +57,7 @@ oh-my-posh font install
 
 Restart Windows Terminal after installing the font, then set it as your terminal font in Settings → Profiles → Appearance → Font face.
 
-The profile uses the **tokyo** theme (`tokyo.omp.json`) which is included with Oh My Posh. If it can't find the theme file it falls back to a minimal pure-PowerShell Tokyo Night prompt automatically — no crash, no ugly default.
+The profile first looks for `tokyo-dev.omp.json` in your PowerShell profile directory (`\$profile_Home\tokyo-dev.omp.json`) for production usage. If not found, it falls back to repo paths (`themes/powershell/tokyo-dev.omp.json`), then to Oh My Posh's built-in `tokyo.omp.json`, and finally to a minimal pure-PowerShell Tokyo Night prompt.
 
 ### PSReadLine (autosuggestions, syntax highlighting, keybindings)
 
@@ -379,5 +379,8 @@ Scoop installs to `~\scoop\shims` — make sure it's on your PATH:
 scoop install oh-my-posh
 # If still not found, restart Windows Terminal — scoop updates PATH automatically
 ```
+
+
+
 
 

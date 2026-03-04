@@ -1,4 +1,3 @@
-# =============================================================================
 # PowerShell 7+ Profile — Windows 11/10
 # Prompt:  Oh My Posh (Tokyo Night theme)
 # Modules: PSReadLine
@@ -21,16 +20,26 @@ if (-not $Host.UI.RawUI) { return }
 
 if (Get-Command oh-my-posh -ErrorAction SilentlyContinue) {
 
-    # $env:POSH_THEMES_PATH is set automatically by Oh My Posh on install.
-    # Using it directly is the most reliable cross-machine approach.
-    $OmpTheme = "$env:POSH_THEMES_PATH\tokyo.omp.json"
+    # Prefer profile-home theme path for production usage.
+    # Keep repo paths as fallback for local dotfiles development.
+    $profile_Home = Split-Path -Parent $PROFILE
+    $ompThemeCandidates = @(
+        (Join-Path $profile_Home 'tokyo-dev.omp.json'),
+        (Join-Path $PSScriptRoot 'themes\powershell\tokyo-dev.omp.json'),
+        (Join-Path $HOME 'dotfiles\themes\powershell\tokyo-dev.omp.json'),
+        '\\wsl.localhost\Debian\root\dotfiles\themes\powershell\tokyo-dev.omp.json'
+    )
+    $OmpTheme = $ompThemeCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+    if (-not $OmpTheme) {
+        $OmpTheme = Join-Path $env:POSH_THEMES_PATH 'tokyo.omp.json'
+    }
 
     if (Test-Path $OmpTheme) {
         oh-my-posh init pwsh --config $OmpTheme | Invoke-Expression
     } else {
         # Theme file not found — render a minimal pure-PowerShell Tokyo Night
         # prompt so the profile never crashes or falls back to the default.
-        Write-Host "  [oh-my-posh] tokyo.omp.json not found at: $env:POSH_THEMES_PATH" -ForegroundColor DarkGray
+        Write-Host "  [oh-my-posh] theme not found (repo or built-in): $OmpTheme" -ForegroundColor DarkGray
         Write-Host "  Run: oh-my-posh font install    then restart terminal." -ForegroundColor DarkGray
 
         function prompt {
@@ -457,4 +466,7 @@ Write-Host ""
 Write-Host "  PowerShell $($PSVersionTable.PSVersion) — Developer Profile loaded." -ForegroundColor DarkGray
 Write-Host "  Run devinfo to see installed tool versions." -ForegroundColor DarkGray
 Write-Host ""
+
+
+
 

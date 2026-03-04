@@ -20,6 +20,16 @@ Describe 'Microsoft.PowerShell_profile.ps1' {
         $script:parseErrors | Should BeNullOrEmpty
     }
 
+    It 'prefers profile-home OMP theme and falls back to repo and built-in tokyo theme' {
+        $script:profileContent | Should Match '\$ompThemeCandidates\s*=\s*@\('
+        $script:profileContent | Should Match '\$profile_Home\s*=\s*Split-Path -Parent \$PROFILE'
+        $script:profileContent | Should Match 'Join-Path \$profile_Home '
+        $script:profileContent | Should Match "'tokyo-dev\.omp\.json'"
+        $script:profileContent | Should Match 'themes\\powershell\\tokyo-dev\.omp\.json'
+        $script:profileContent | Should Match 'Join-Path \$env:POSH_THEMES_PATH '
+        $script:profileContent | Should Match "'tokyo\.omp\.json'"
+    }
+
     It 'guards Kiro integration behind TERM_PROGRAM and command existence' {
         $script:profileContent | Should Match 'if \(\(\$env:TERM_PROGRAM -eq "kiro"\) -and \(Get-Command kiro -ErrorAction SilentlyContinue\)\)'
         $script:profileContent | Should Match '\$kiroIntegrationPath\s*=\s*kiro --locate-shell-integration-path pwsh'
@@ -49,3 +59,5 @@ Describe 'Microsoft.PowerShell_profile.ps1' {
         $script:profileContent | Should Match 'Set-Alias -Name gup\s+-Value gitupdate\s+-Force'
     }
 }
+
+

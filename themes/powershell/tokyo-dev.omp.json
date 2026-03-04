@@ -1,0 +1,69 @@
+{
+  "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
+  "version": 3,
+  "final_space": true,
+  "blocks": [
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "segments": [
+        {
+          "type": "session",
+          "style": "plain",
+          "foreground": "#7aa2f7",
+          "template": "{{ .UserName }}@{{ .HostName }} "
+        },
+        {
+          "type": "path",
+          "style": "plain",
+          "foreground": "#7dcfff",
+          "template": "{{ .Path }}"
+        },
+        {
+          "type": "git",
+          "style": "plain",
+          "foreground": "#9ece6a",
+          "properties": {
+            "branch_icon": "",
+            "fetch_status": true
+          },
+          "template": "{{ if .HEAD }} ({{ .HEAD }}{{ if or .Working.Changed .Staging.Changed }}*{{ end }}){{ end }}"
+        },
+        {
+          "type": "python",
+          "style": "plain",
+          "foreground": "#ff9e64",
+          "properties": {
+            "display_mode": "environment",
+            "fetch_virtual_env": true
+          },
+          "template": " py:{{ if .Venv }}{{ .Venv }} {{ end }}{{ .Full }}"
+        }
+      ]
+    },
+    {
+      "type": "prompt",
+      "alignment": "right",
+      "segments": [
+        {
+          "type": "status",
+          "style": "plain",
+          "foreground": "#9ece6a",
+          "foreground_templates": [
+            "{{ if gt .Code 0 }}#f7768e{{ end }}"
+          ],
+          "template": "{{ if gt .Code 0 }}x {{ .Code }}{{ else }}ok{{ end }}"
+        },
+        {
+          "type": "time",
+          "style": "plain",
+          "foreground": "#565f89",
+          "properties": {
+            "time_format": "15:04:05"
+          },
+          "template": " {{ .CurrentDate | date .Format }}"
+        }
+      ]
+    }
+  ]
+}

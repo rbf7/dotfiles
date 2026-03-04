@@ -35,8 +35,17 @@ Describe 'README_PowerShell consistency with profile' {
         $script:profileContent | Should Match 'PyCharm-P\\ch-0\\\*\\bin\\pycharm64\.exe'
     }
 
+    It 'documents profile-home OMP theme preference and profile references tokyo-dev path' {
+        $script:readmeContent | Should Match 'PowerShell profile directory'
+        $script:readmeContent | Should Match 'themes/powershell/tokyo-dev\.omp\.json'
+        $script:profileContent | Should Match '\$profile_Home\s*=\s*Split-Path -Parent \$PROFILE'
+        $script:profileContent | Should Match 'themes\\powershell\\tokyo-dev\.omp\.json'
+    }
+
     It 'documents codex powershell completion note and profile uses powershell keyword' {
         $script:readmeContent | Should Match 'uses `powershell` \(not `pwsh`\)'
         $script:profileContent | Should Match 'codex completion powershell'
     }
 }
+
+
