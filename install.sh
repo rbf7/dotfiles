@@ -214,13 +214,45 @@ fi
 
 
 # -----------------------------------------------------------------------------
-# 5. Check optional dev tools — report what's missing, don't force install
+# 5. Install fzf (required for Ctrl+R / Ctrl+T / Alt+C / Ctrl+Space)
+# -----------------------------------------------------------------------------
+echo ""
+info "Checking fzf..."
+
+if command -v fzf >/dev/null 2>&1; then
+  success "fzf already installed: $(fzf --version)"
+else
+  warn "fzf not found."
+  printf "  Install fzf now? [y/N] "; read -r _reply
+  if [[ "$_reply" =~ ^[Yy]$ ]]; then
+    if [[ "$OS" == "mac" ]]; then
+      brew install fzf
+    elif [[ "$OS" == "linux" || "$OS" == "wsl" ]]; then
+      if command -v brew >/dev/null 2>&1; then
+        # Homebrew ships modern fzf (≥ 0.48) — required for 'fzf --zsh'
+        brew install fzf
+      else
+        warn "apt fzf is typically < 0.48 — 'fzf --zsh' not supported."
+        warn "Ctrl+R and Ctrl+Space will fall back to legacy key-bindings.zsh."
+        warn "For the modern version: https://github.com/junegunn/fzf#installation"
+        sudo apt update && sudo apt install -y fzf
+      fi
+    fi
+    success "fzf installed."
+  else
+    warn "Skipping fzf. Ctrl+R, Ctrl+T, Alt+C and Ctrl+Space will be unavailable."
+  fi
+fi
+
+
+# -----------------------------------------------------------------------------
+# 6. Check optional dev tools — report what's missing, don't force install
 # -----------------------------------------------------------------------------
 echo ""
 info "Checking optional developer tools..."
 
 _missing=()
-_tools=(git docker node python3 terraform go rustc ruby php java)
+_tools=(git docker node python3 terraform go rustc ruby php java fzf)
 
 for _t in "${_tools[@]}"; do
   if command -v "$_t" >/dev/null 2>&1; then
@@ -247,7 +279,7 @@ fi
 
 
 # -----------------------------------------------------------------------------
-# 6. macOS extras — Homebrew check
+# 7. macOS extras — Homebrew check
 # -----------------------------------------------------------------------------
 if [[ "$OS" == "mac" ]]; then
   echo ""

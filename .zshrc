@@ -86,11 +86,15 @@ precmd() {
   fi
 
   # Terraform — only shown if .tf files exist in current directory
+  # Use zsh (N) nullglob qualifier — no external processes, no NOMATCH errors
   _pt=""
-  if command -v terraform >/dev/null 2>&1 && ls "$PWD"/*.tf 2>/dev/null | grep -q .; then
-    local _tfver
-    _tfver=$(terraform version 2>/dev/null | head -1 | awk '{print $2}' | sed 's/v//')
-    _pt=" %F{117}🏗  tf:${_tfver}%f"
+  if command -v terraform >/dev/null 2>&1; then
+    local -a _tf_files=("$PWD"/*.tf(N))
+    if (( ${#_tf_files} > 0 )); then
+      local _tfver
+      _tfver=$(terraform version 2>/dev/null | head -1 | awk '{print $2}' | sed 's/v//')
+      _pt=" %F{117}🏗  tf:${_tfver}%f"
+    fi
   fi
 
   # Java — only shown if pom.xml or build.gradle exists in current directory
@@ -328,6 +332,73 @@ _setup_aws_completion
 # 9. KEYBINDINGS
 ############################################
 
+# ── fzf shell integration ──────────────────────────────────────
+# Registers three standard bindings when fzf is present:
+#   Ctrl+R  — fuzzy history search (replaces the default reverse-search)
+#   Ctrl+T  — fuzzy file picker, pastes path onto the command line
+#   Alt+C   — fuzzy directory picker, cd's into the selection
+#
+# Strategy:
+#   fzf --zsh   (≥ 0.48) handles everything in one eval — used on Homebrew
+#               (macOS Apple Silicon, macOS Intel, Linux Homebrew).
+#   Legacy path sources key-bindings.zsh from the apt package layout,
+#               used on Debian / Ubuntu / WSL where apt fzf is < 0.48.
+#
+# Ctrl+Space — custom fzf history picker (defined inside this block):
+#   Opens fzf pre-filtered to whatever is already typed on the prompt line,
+#   mimicking PSReadLine ListView. Selecting a match fills the command line.
+#   Notes:
+#     · No </dev/tty redirect: ZLE owns the tty inside a widget; redirecting
+#       stdin to /dev/tty fights ZLE and breaks input.
+#     · zle reset-prompt: redraws the prompt cleanly after fzf's TUI exits.
+#     · Widget name _zshrc-fzf-history-widget is intentionally distinct from
+#       fzf's own fzf-history-widget (bound to Ctrl+R) to avoid conflicts.
+# ──────────────────────────────────────────────────────────────
+if command -v fzf >/dev/null 2>&1; then
+    # Capture shell integration once; non-empty = modern fzf (≥ 0.48)
+    # Avoid calling fzf --zsh twice (probe + eval); capture once and eval if non-empty.
+    # No 'local' here — this block is at .zshrc top level, not inside a function;
+    # 'local' outside a function body raises "local: can only be used in a function".
+    _fzf_init=$(fzf --zsh 2>/dev/null)
+    if [[ -n "$_fzf_init" ]]; then
+        # Modern fzf (≥ 0.48): Homebrew on macOS and Linux
+        eval "$_fzf_init"
+    else
+        # Legacy fzf from apt (Debian / Ubuntu / WSL)
+        # Homebrew always ships ≥ 0.48 so these paths are Linux-only
+        _fzf_shell_dir=""
+        for _fzf_shell_dir in /usr/share/doc/fzf/examples /usr/share/fzf; do
+            if [[ -f "$_fzf_shell_dir/key-bindings.zsh" ]]; then
+                source "$_fzf_shell_dir/key-bindings.zsh"
+                [[ -f "$_fzf_shell_dir/completion.zsh" ]] \
+                    && source "$_fzf_shell_dir/completion.zsh"
+                break
+            fi
+        done
+    fi
+    unset _fzf_init _fzf_shell_dir
+
+    # Ctrl+Space — fzf history picker pre-filtered to current prompt contents
+    _zshrc_fzf_history_widget() {
+        local selected
+        selected=$(
+            fc -rl 1 \
+            | sed 's/^[[:space:]]*[0-9][0-9]*[[:space:]]*//' \
+            | awk '!seen[$0]++' \
+            | fzf --height 40% --reverse --prompt='history> ' --query "$LBUFFER"
+        )
+        if [[ -n "$selected" ]]; then
+            BUFFER="$selected"
+            CURSOR=${#BUFFER}
+        fi
+        zle reset-prompt
+    }
+    zle -N _zshrc-fzf-history-widget _zshrc_fzf_history_widget
+    bindkey '^ ' _zshrc-fzf-history-widget
+fi
+
+# ── zsh-history-substring-search ──────────────────────────────
+# Ctrl+P / Ctrl+N and arrow keys filter history by what is already typed
 if zplug check "zsh-users/zsh-history-substring-search"; then
     bindkey -M emacs '^P'    history-substring-search-up
     bindkey -M emacs '^N'    history-substring-search-down
@@ -335,29 +406,11 @@ if zplug check "zsh-users/zsh-history-substring-search"; then
     bindkey -M emacs '\e[B'  history-substring-search-down
 fi
 
+# ── zsh-autosuggestions ────────────────────────────────────────
+# Ctrl+F accepts the inline ghost suggestion
 if zplug check "zsh-users/zsh-autosuggestions"; then
     bindkey '^F' autosuggest-accept
 fi
-
-_setup_fzf_history_widget() {
-    command -v fzf >/dev/null 2>&1 || return 0
-    [[ -o zle ]] || return 0
-
-    fzf_history_widget() {
-        local selected
-        selected=$(fc -rl 1 | sed 's/^[[:space:]]*[0-9][0-9]*[[:space:]]*//' | awk '!seen[$0]++' | fzf --height 40% --reverse --prompt='history> ')
-        [[ -z "$selected" ]] && zle redisplay && return 0
-
-        BUFFER="$selected"
-        CURSOR=${#BUFFER}
-        zle redisplay
-    }
-
-    zle -N fzf-history-widget fzf_history_widget
-    bindkey '^ ' fzf-history-widget
-}
-
-_setup_fzf_history_widget
 
 
 ############################################
@@ -400,7 +453,7 @@ fi
 
 _check_packages() {
     local missing=()
-    local tools=(autojump tmux docker aws node python3 terraform starship git)
+    local tools=(autojump tmux docker aws node python3 terraform starship git fzf)
 
     for t in "${tools[@]}"; do
         command -v "$t" >/dev/null 2>&1 || missing+=("$t")
@@ -661,10 +714,13 @@ _show_setup_help() {
     ghcg "query"    — Copilot: suggest a git command
 
   Keybindings:
-    Ctrl+P / ↑      — history search up
+    Ctrl+P / ↑      — history search up (substring match)
     Ctrl+N / ↓      — history search down
-    Ctrl+F          — accept autosuggestion
-    Ctrl+Space      — open fzf history picker
+    Ctrl+F          — accept inline autosuggestion
+    Ctrl+R          — fzf fuzzy history search (requires fzf)
+    Ctrl+T          — fzf fuzzy file picker, paste path (requires fzf)
+    Alt+C           — fzf fuzzy cd into directory (requires fzf)
+    Ctrl+Space      — fzf history picker, pre-filtered to typed prefix (requires fzf)
 
 EOF
 }

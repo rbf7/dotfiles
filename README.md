@@ -188,24 +188,46 @@ Caused by `set -u` (strict mode) in the script treating an unset `ZPLUG_HOME` as
 
 ## Keybindings
 
-| Keys | Action |
-|------|--------|
-| `Ctrl+P` or `↑` | History search up (substring match) |
-| `Ctrl+N` or `↓` | History search down |
-| `Ctrl+F` | Accept autosuggestion |
-| `Ctrl+Space` | Open `fzf-history-widget` history picker (when `fzf` is installed) |
+| Keys | Action | Requires |
+|------|--------|----------|
+| `Ctrl+P` or `↑` | History search up (substring match) | `zsh-history-substring-search` plugin |
+| `Ctrl+N` or `↓` | History search down | `zsh-history-substring-search` plugin |
+| `Ctrl+F` | Accept inline autosuggestion | `zsh-autosuggestions` plugin |
+| `Ctrl+R` | fzf fuzzy history search | `fzf` |
+| `Ctrl+T` | fzf file picker — pastes selected path onto command line | `fzf` |
+| `Alt+C` | fzf directory picker — `cd` into selection | `fzf` |
+| `Ctrl+Space` | fzf history picker, **pre-filtered to what you've already typed** | `fzf` |
 
-### `fzf` requirement for `Ctrl+Space`
+### `Ctrl+R` vs `Ctrl+Space`
 
-The `fzf-history-widget` keybinding requires the `fzf` binary to be installed.
+Both open fzf over your history, but differ in starting state:
+
+| Binding | Starts with... | Best for... |
+|---------|---------------|-------------|
+| `Ctrl+R` | Empty query — browse all history | Exploring history freely |
+| `Ctrl+Space` | Query pre-filled with what you've typed | Type a few chars first, then open filtered list — equivalent to PSReadLine `ListView` in PowerShell |
+
+### fzf shell integration
+
+fzf bindings (`Ctrl+R`, `Ctrl+T`, `Alt+C`, `Ctrl+Space`) activate **automatically on shell startup** — no manual setup required beyond installing fzf.
+
+The config detects the fzf version and takes the right path for each platform:
+
+| Platform | fzf source | Method |
+|----------|-----------|--------|
+| macOS (Homebrew) | `brew install fzf` | `eval "$(fzf --zsh)"` — modern API (≥ 0.48) |
+| Linux (Homebrew) | `brew install fzf` | `eval "$(fzf --zsh)"` — modern API (≥ 0.48) |
+| Debian / Ubuntu / WSL | `apt install fzf` | Sources `key-bindings.zsh` directly — fallback for older apt builds |
 
 ```bash
-# macOS
+# macOS / Linux (Homebrew)
 brew install fzf
 
 # Debian / Ubuntu / WSL
 sudo apt update && sudo apt install -y fzf
 ```
+
+After installing, open a new terminal — bindings register automatically.
 
 ---
 
@@ -482,8 +504,9 @@ To add any of these, copy the pattern from an existing language block in `precmd
 5. Offers to set Zsh as your **default shell** if it isn't already
 6. Checks if **zplug** is installed — offers to install via curl if not (never `brew install zplug` — Homebrew produces an incomplete install). If already installed, automatically clears any ghost entries from `~/.zplug/packages.zsh` that would cause `Failed to install` errors
 7. Checks if **autojump** is installed — offers to install it if not
-8. Reports which **optional dev tools** are missing (git, docker, node, python3, terraform, go, rust, ruby, php, java) with the right install command for your OS
-9. On macOS, checks for **Homebrew** and offers to install it
+8. Checks if **fzf** is installed — offers to install it if not. On Linux/WSL without Homebrew, warns that the apt version is old (<0.48) and the legacy `key-bindings.zsh` fallback will be used for Ctrl+R / Ctrl+Space
+9. Reports which **optional dev tools** are missing (git, docker, node, python3, terraform, go, rust, ruby, php, java, **fzf**) with the right install command for your OS
+10. On macOS, checks for **Homebrew** and offers to install it
 
 ```bash
 bash install.sh
