@@ -46,6 +46,13 @@ Describe 'README_PowerShell consistency with profile' {
         $script:readmeContent | Should Match 'uses `powershell` \(not `pwsh`\)'
         $script:profileContent | Should Match 'codex completion powershell'
     }
+
+    It 'uses the current OpenAI Codex install guidance' {
+        $script:readmeContent | Should Match '@openai/codex'
+        $script:profileContent | Should Match '@openai/codex'
+        $script:readmeContent | Should Not Match '@githubnext/github-copilot-cli'
+        $script:profileContent | Should Not Match '@githubnext/github-copilot-cli'
+    }
 }
 
 

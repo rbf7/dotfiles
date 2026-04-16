@@ -438,11 +438,10 @@ if (Get-Command gh -ErrorAction SilentlyContinue) {
 }
 
 
-# --- GitHub Codex CLI ---
-# Install: npm install -g @githubnext/github-copilot-cli  (now part of gh copilot)
-# Or via npm: npm install -g @github/copilot-cli
+# --- OpenAI Codex CLI ---
+# Install: npm install -g @openai/codex
 # Usage:
-#   codex "create a REST API in Python"
+#   codex
 if (Get-Command codex -ErrorAction SilentlyContinue) {
     # Enable tab completion — codex uses 'powershell' not 'pwsh' as the shell name.
     # Guard against empty output to avoid 'Cannot bind argument' errors.
@@ -453,7 +452,7 @@ if (Get-Command codex -ErrorAction SilentlyContinue) {
 } else {
     function codex {
         Write-Host "Codex CLI not found." -ForegroundColor Yellow
-        Write-Host "Install: npm install -g @githubnext/github-copilot-cli" -ForegroundColor DarkGray
+        Write-Host "Install: npm install -g @openai/codex" -ForegroundColor DarkGray
     }
 }
 

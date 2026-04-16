@@ -666,17 +666,17 @@ else
 fi
 
 
-# --- GitHub Codex CLI ---
-# Install: npm install -g @githubnext/github-copilot-cli
-# Usage:   codex "write a bash script that monitors disk usage"
+# --- OpenAI Codex CLI ---
+# Install: npm install -g @openai/codex  or  brew install --cask codex
+# Usage:   codex
 if command -v codex >/dev/null 2>&1; then
-    # Enable tab completion if available
-    eval "$(codex completion zsh 2>/dev/null)" 2>/dev/null || true
+  # Enable tab completion if available
+  eval "$(codex completion zsh 2>/dev/null)" 2>/dev/null || true
 else
-    function codex() {
-        echo "Codex CLI not found."
-        echo "Install: npm install -g @githubnext/github-copilot-cli"
-    }
+  function codex() {
+    echo "Codex CLI not found."
+    echo "Install: npm install -g @openai/codex  or  brew install --cask codex"
+  }
 fi
 
 

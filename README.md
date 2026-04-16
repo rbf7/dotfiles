@@ -421,8 +421,11 @@ gh auth login
 # Install Copilot extension (all platforms)
 gh extension install github/gh-copilot
 
-# Install Codex CLI (requires Node/npm — all platforms)
-npm install -g @githubnext/github-copilot-cli
+# Install OpenAI Codex CLI (all platforms with npm)
+npm install -g @openai/codex
+
+# macOS alternative
+brew install --cask codex
 ```
 
 ### Commands
@@ -432,7 +435,7 @@ npm install -g @githubnext/github-copilot-cli
 | `ghcs "query"` | Suggest a **shell** command |
 | `ghce "query"` | **Explain** a command or error |
 | `ghcg "query"` | Suggest a **git** command |
-| `codex "query"` | Full Codex CLI for code generation |
+| `codex` | Start OpenAI Codex in the current directory |
 
 ### Examples
 
@@ -440,10 +443,12 @@ npm install -g @githubnext/github-copilot-cli
 ghcs "find all files larger than 100mb modified in the last week"
 ghce "what does git rebase -i HEAD~3 do"
 ghcg "undo last commit but keep my changes"
-codex "write a bash script that monitors disk usage and alerts at 90%"
+codex
 ```
 
 Tab completion for `gh` registers automatically when the shell loads.
+
+The first time you run `codex`, it prompts you to sign in with ChatGPT or an API key.
 
 ---
 

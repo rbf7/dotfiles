@@ -87,7 +87,7 @@
   - `Microsoft.PowerShell_profile.ps1:386-429`
 - Pester cases:
   - When `gh` is absent, `ghcs/ghce/ghcg` stubs exist and return install guidance.
-  - When `codex` absent, `codex` stub exists and returns install guidance.
+  - When `codex` absent, `codex` stub exists and returns current OpenAI Codex install guidance.
 
 ## Suggested Pester Layout
 
