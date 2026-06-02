@@ -166,7 +166,8 @@ function devinfo {
         @{ cmd = "rustc";     label = "🦀 Rust      "; args = "--version" },
         @{ cmd = "ruby";      label = "💎 Ruby      "; args = "--version" },
         @{ cmd = "php";       label = "🐘 PHP       "; args = "--version" },
-        @{ cmd = "git";       label = "🌿 Git       "; args = "--version" }
+        @{ cmd = "git";       label = "🌿 Git       "; args = "--version" },
+        @{ cmd = "codex";     label = "🤖 Codex     "; args = "--version" }
     )
 
     foreach ($t in $tools) {
@@ -442,6 +443,7 @@ if (Get-Command gh -ErrorAction SilentlyContinue) {
 # Install: npm install -g @openai/codex
 # Usage:
 #   codex
+#   codexr   — resume all tasks (workspace-write, no approval prompts)
 if (Get-Command codex -ErrorAction SilentlyContinue) {
     # Enable tab completion — codex uses 'powershell' not 'pwsh' as the shell name.
     # Guard against empty output to avoid 'Cannot bind argument' errors.
@@ -449,8 +451,16 @@ if (Get-Command codex -ErrorAction SilentlyContinue) {
         $codexCompletion = codex completion powershell 2>$null
         if ($codexCompletion) { $codexCompletion | Out-String | Invoke-Expression }
     } catch {}
+
+    function codexr {
+        codex -C . -s workspace-write -a never resume --all @args
+    }
 } else {
     function codex {
+        Write-Host "Codex CLI not found." -ForegroundColor Yellow
+        Write-Host "Install: npm install -g @openai/codex" -ForegroundColor DarkGray
+    }
+    function codexr {
         Write-Host "Codex CLI not found." -ForegroundColor Yellow
         Write-Host "Install: npm install -g @openai/codex" -ForegroundColor DarkGray
     }

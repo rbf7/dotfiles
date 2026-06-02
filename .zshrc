@@ -189,6 +189,7 @@ devinfo() {
   command -v php      >/dev/null 2>&1 && echo "  🐘 PHP      : $(php --version | head -1 | awk '{print $2}')"
   command -v kotlin   >/dev/null 2>&1 && echo "  🎯 Kotlin   : $(kotlin -version 2>&1 | awk '{print $3}')"
   command -v git      >/dev/null 2>&1 && echo "  🌿 Git      : $(git --version | awk '{print $3}')"
+  command -v codex    >/dev/null 2>&1 && echo "  🤖 Codex    : $(codex --version 2>&1 | head -1)"
   echo ""
 }
 
@@ -672,8 +673,15 @@ fi
 if command -v codex >/dev/null 2>&1; then
   # Enable tab completion if available
   eval "$(codex completion zsh 2>/dev/null)" 2>/dev/null || true
+
+  # Resume all tasks: workspace-write access, no approval prompts
+  function codexr() { codex -C . -s workspace-write -a never resume --all "$@"; }
 else
   function codex() {
+    echo "Codex CLI not found."
+    echo "Install: npm install -g @openai/codex  or  brew install --cask codex"
+  }
+  function codexr() {
     echo "Codex CLI not found."
     echo "Install: npm install -g @openai/codex  or  brew install --cask codex"
   }

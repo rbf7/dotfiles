@@ -58,6 +58,15 @@ Describe 'Microsoft.PowerShell_profile.ps1' {
         $script:profileContent | Should Match 'Set-Alias -Name gpush -Value gitpush\s+-Force'
         $script:profileContent | Should Match 'Set-Alias -Name gup\s+-Value gitupdate\s+-Force'
     }
+
+    It 'defines codexr function with correct resume flags' {
+        $script:profileContent | Should Match 'function codexr'
+        $script:profileContent | Should Match 'codex -C \. -s workspace-write -a never resume --all'
+    }
+
+    It 'includes codex in devinfo tools list' {
+        $script:profileContent | Should Match '"codex"'
+    }
 }
 
 

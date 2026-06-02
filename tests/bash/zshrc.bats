@@ -43,6 +43,14 @@ ZPLUG
   [[ "$output" == *"npm install -g @openai/codex"* ]]
 }
 
+@test '.zshrc codexr stub provides current install guidance when codex is missing' {
+  run env HOME="$TEST_HOME" PATH="/usr/bin:/bin" zsh -ic "source '$REPO_ROOT/.zshrc' >/dev/null 2>&1; codexr"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Codex CLI not found."* ]]
+  [[ "$output" == *"npm install -g @openai/codex"* ]]
+}
+
 @test '.zshrc does not hard-fail when codex completion is available' {
   make_stub_cmd "$TEST_BIN" codex 'if [[ "${1:-}" == "completion" && "${2:-}" == "zsh" ]]; then printf "%s\n" "# codex completion stub"; fi; exit 0'
 
