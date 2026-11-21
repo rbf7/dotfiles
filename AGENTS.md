@@ -18,6 +18,39 @@ security and destroy rules in this file unless the owner explicitly changes them
 2. `docs/state.md`: where we are, open items, next actions (the resume point).
 3. Only what the task touches: `README.md`, `README_PowerShell.md`, `install.sh`, `tests/`.
 
+## Delegate simple work to cheaper subagents (owner rule, 2026-11-12; reworded 2026-11-21)
+
+**The owner asks you to use subagents for the work below**, in every task, the first one included;
+this overrides any default against spawning agents. Why: bulky output (plans, logs, grep hits)
+stays out of your context, where every later turn pays for it again, and a cheaper model does it.
+
+If the step is… → hand off:
+1. a check whose expected result you can write down (health, routes, inventory, plan counts in a
+   CI comment, a CI run log, "value X is in files A–C") → the check;
+2. reading you need only an answer from (inventories, logs, a doc vs the code) → the reading;
+3. an edit you have already decided that repeats in 2+ files (rename, sweep, copy a value)
+   → the edit, with the exact old → new list and the file list.
+
+- **Inline** only if the whole step is ≤ 2 commands with short output (one `gh pr checks`), or the
+  output is already in the chat (the owner pasted it; next time ask for the run link instead).
+- **Mixed task:** split it. Decide yourself first, then hand off the parts that match 1–3.
+- **Unclear:** can you write down the expected result? Yes → hand off. No → it is judgement:
+  keep it.
+- **Never handed off:** design and plans; decisions on security, IAM, secrets or cost; a command
+  that changes a host or production or needs the owner's approval (read-only commands this file
+  allows without asking are fine); reading secret values; judging a failure or an unexpected diff.
+- **Hand-off prompt:** "Read-only [or: edit only <files>]. Never read `.env`, secrets or container
+  environment values. No commits, pushes, state or history edits, no subagents. Run: 1) <command>,
+  expect <result>; … Report PASS/FAIL per item with the output line that proves it, deviations
+  verbatim, no fixes."
+- **The subagent reports; the main agent decides.** Re-run every FAIL and one PASS yourself; read
+  the `git diff` of its edits before committing. Its verdict is never the owner's approval: say "a
+  subagent checked" in replies and the history file. A subagent skips this file's state duties.
+- **Show it:** a reply that ran checks or edits ends `Delegated: <what> (<model>)` or
+  `Inline: <why>`.
+- Claude Code: Agent tool, `model: "haiku"` for 1 and 3, `"sonnet"` for 2; a Sonnet session uses
+  haiku, a Haiku session works inline. Tools without a subagent model choice: work inline.
+
 ## Change discipline
 
 - Work on a feature branch; never commit to `main`/`master`. The owner merges PRs on GitHub.
@@ -49,9 +82,5 @@ only as examples. This public repository holds no secrets: never add one.
 - **Workflows** (2026-11-06): GitHub-hosted runners only (never `runs-on: self-hosted`); every
   workflow has a `paths` filter that excludes `**/*.md`, `timeout-minutes` on every job and
   `concurrency`.
-- **Cheaper subagents for simple work** (owner, 2026-11-12; every rbf7 repo): delegate to a
-  cheaper model (e.g. Sonnet or Haiku) checking pasted outputs against an expected result ("plan
-  says No changes?", "13 added?"), read-only verification lists, and mechanical edits (renames,
-  doc sweeps, copying a value). Keep on the main model: design, plans for review, anything
-  touching security, IAM, secrets or cost, and judging a failure or an unexpected diff. The
-  subagent reports; the main agent decides — a subagent's verdict is never the owner's approval.
+- **Cheaper subagents** (owner, 2026-11-12; reworded 2026-11-16, 2026-11-21): the section
+  "Delegate simple work to cheaper subagents" in this file; every rbf7 repo has it, unchanged.
