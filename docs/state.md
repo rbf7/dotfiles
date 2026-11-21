@@ -24,4 +24,10 @@ None is urgent; the owner picks.
 
 ## Next actions
 
+- Agent standard step 5b (`rbf7-platform-iac` ADR-007, amended 2026-11-21), owner 2026-11-21:
+  `AGENTS.md` gets the required section "Delegate simple work to cheaper subagents" (revised
+  wording, tested in fresh Opus sessions) and the standard org-wide block; `.claude/CLAUDE.md` a
+  two-line reminder in the owner's words. PR on `claude/adopt-subagent-rule`; docs and agent config
+  only. Owner: merge.
+
 1. Owner: item 5, then any other item.
